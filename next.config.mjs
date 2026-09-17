@@ -6,6 +6,9 @@ const nextConfig = {
   eslint: {
     ignoreDuringBuilds: true,
   },
+  outputFileTracingIncludes: {
+    "/**": ["./prisma/**/*"],
+  },
   images: {
     remotePatterns: [
       {

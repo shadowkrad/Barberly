@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server";
-import { prisma } from "@/lib/db";
+import { prisma, ensureDatabase } from "@/lib/db";
 
 export async function GET() {
   try {
+    await ensureDatabase();
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const tomorrow = new Date(today);
@@ -37,6 +38,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    await ensureDatabase();
     const body = await req.json();
     const { barberId, clientId, serviceId, startTime, endTime, notes } = body;
 
