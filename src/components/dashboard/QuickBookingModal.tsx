@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { useRouter } from "next/navigation";
 import { Plus, X, Calendar, Clock, Scissors, User } from "lucide-react";
 
 interface OptionItem {
@@ -14,7 +15,7 @@ interface QuickBookingModalProps {
   barbers: OptionItem[];
   services: OptionItem[];
   clients: OptionItem[];
-  onCreated: () => void;
+  onCreated?: () => void;
 }
 
 export function QuickBookingModal({
@@ -23,6 +24,7 @@ export function QuickBookingModal({
   clients,
   onCreated,
 }: QuickBookingModalProps) {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const [barberId, setBarberId] = useState(barbers[0]?.id || "");
   const [clientId, setClientId] = useState(clients[0]?.id || "");
@@ -53,7 +55,10 @@ export function QuickBookingModal({
       if (res.ok) {
         setIsOpen(false);
         setNotes("");
-        onCreated();
+        if (onCreated) {
+          onCreated();
+        }
+        router.refresh();
       }
     } catch (err) {
       console.error("Errore salvataggio:", err);

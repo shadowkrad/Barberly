@@ -110,10 +110,6 @@ export default async function HomePage() {
               barbers={optionsBarbers}
               services={services}
               clients={optionsClients}
-              onCreated={async () => {
-                "use server";
-                // Server action trigger
-              }}
             />
           </div>
         </div>
