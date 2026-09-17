@@ -5,7 +5,7 @@ import { ActiveModulesCard } from "@/components/dashboard/ActiveModulesCard";
 import { AppointmentTimeline } from "@/components/dashboard/AppointmentTimeline";
 import { QuickBookingModal } from "@/components/dashboard/QuickBookingModal";
 import { getTenantConfig } from "@/lib/taaaac-core";
-import { prisma } from "@/lib/db";
+import { prisma, ensureDatabase } from "@/lib/db";
 import { Scissors, UserCheck, Calendar as CalendarIcon } from "lucide-react";
 
 export const dynamic = "force-dynamic";
@@ -18,38 +18,54 @@ export default async function HomePage() {
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
 
-  // Dati da SQLite
-  const [appointments, barbers, services, clients] = await Promise.all([
-    prisma.appointment.findMany({
-      where: {
-        date: {
-          gte: today,
-          lt: tomorrow,
-        },
-      },
-      include: {
-        barber: true,
-        client: true,
-        service: true,
-      },
-      orderBy: {
-        startTime: "asc",
-      },
-    }),
-    prisma.barber.findMany({
-      where: { isActive: true },
-      select: { id: true, name: true, nickname: true },
-    }),
-    prisma.service.findMany({
-      where: { isActive: true },
-      select: { id: true, name: true, price: true, durationMinutes: true },
-    }),
-    prisma.client.findMany({
-      select: { id: true, firstName: true, lastName: true, phone: true },
-    }),
-  ]);
+  // Assicura che il database e le tabelle siano inizializzati
+  await ensureDatabase();
 
-  const totalClientsCount = await prisma.client.count();
+  let appointments: any[] = [];
+  let barbers: any[] = [];
+  let services: any[] = [];
+  let clients: any[] = [];
+  let totalClientsCount = 0;
+
+  try {
+    const [dbAppointments, dbBarbers, dbServices, dbClients] = await Promise.all([
+      prisma.appointment.findMany({
+        where: {
+          date: {
+            gte: today,
+            lt: tomorrow,
+          },
+        },
+        include: {
+          barber: true,
+          client: true,
+          service: true,
+        },
+        orderBy: {
+          startTime: "asc",
+        },
+      }),
+      prisma.barber.findMany({
+        where: { isActive: true },
+        select: { id: true, name: true, nickname: true },
+      }),
+      prisma.service.findMany({
+        where: { isActive: true },
+        select: { id: true, name: true, price: true, durationMinutes: true },
+      }),
+      prisma.client.findMany({
+        select: { id: true, firstName: true, lastName: true, phone: true },
+      }),
+    ]);
+
+    appointments = dbAppointments;
+    barbers = dbBarbers;
+    services = dbServices;
+    clients = dbClients;
+    totalClientsCount = await prisma.client.count();
+  } catch (err) {
+    console.error("Avviso caricamento dati SQLite in HomePage:", err);
+  }
 
   // Calcolo metriche
   const totalAppointments = appointments.length;
