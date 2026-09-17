@@ -16,6 +16,7 @@ COPY . .
 
 ENV NEXT_TELEMETRY_DISABLED=1
 ENV NODE_ENV=production
+ENV DOCKER_BUILD=true
 
 # Genera client Prisma e costruisce Next.js in modalità standalone
 RUN npx prisma generate

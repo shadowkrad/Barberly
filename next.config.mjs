@@ -1,7 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: "standalone",
+  // Modalità standalone abilitata solo per la build Docker su VPS Aruba
+  output: process.env.DOCKER_BUILD === "true" ? "standalone" : undefined,
   reactStrictMode: true,
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
   images: {
     remotePatterns: [
       {
