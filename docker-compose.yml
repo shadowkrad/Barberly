@@ -1,0 +1,32 @@
+services:
+  barberly:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: barberly-node
+    restart: unless-stopped
+    environment:
+      - DATABASE_URL=file:/app/data/barberly.db
+      - TAAAAC_CORE_URL=${TAAAAC_CORE_URL:-https://taaaac.eu}
+      - TAAAAC_TENANT_DOMAIN=${TAAAAC_TENANT_DOMAIN:-barberly-demo.taaaac.eu}
+      - TAAAAC_TENANT_TOKEN=${TAAAAC_TENANT_TOKEN:-demo-token-barberly}
+      - NODE_ENV=production
+    volumes:
+      - barberly_data:/app/data
+    networks:
+      - traefik-net
+    labels:
+      # Traefik Reverse Proxy Configuration per [subdomain].taaaac.eu
+      - "traefik.enable=true"
+      - "traefik.http.routers.barberly.rule=Host(`${TAAAAC_TENANT_DOMAIN}`)"
+      - "traefik.http.routers.barberly.entrypoints=websecure"
+      - "traefik.http.routers.barberly.tls.certresolver=letsencrypt"
+      - "traefik.http.services.barberly.loadbalancer.server.port=3000"
+
+volumes:
+  barberly_data:
+    driver: local
+
+networks:
+  traefik-net:
+    external: true

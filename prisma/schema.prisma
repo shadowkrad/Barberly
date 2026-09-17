@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Barber {
+  id           String        @id @default(cuid())
+  name         String
+  nickname     String?
+  email        String?
+  phone        String?
+  avatarUrl    String?
+  isActive     Boolean       @default(true)
+  appointments Appointment[]
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+}
+
+model Service {
+  id              String        @id @default(cuid())
+  name            String
+  description     String?
+  durationMinutes Int           @default(30)
+  price           Float
+  category        String        @default("HAIR") // HAIR, BEARD, COMBO, TREATMENT
+  isActive        Boolean       @default(true)
+  appointments    Appointment[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model Client {
+  id            String        @id @default(cuid())
+  firstName     String
+  lastName      String
+  phone         String
+  email         String?
+  notes         String?
+  loyaltyPoints Int           @default(0)
+  appointments  Appointment[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+model Appointment {
+  id         String   @id @default(cuid())
+  barberId   String
+  barber     Barber   @relation(fields: [barberId], references: [id], onDelete: Cascade)
+  clientId   String
+  client     Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  serviceId  String
+  service    Service  @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  date       DateTime
+  startTime  String   // Formato "HH:mm" es. "10:30"
+  endTime    String   // Formato "HH:mm" es. "11:00"
+  status     String   @default("CONFIRMED") // PENDING, CONFIRMED, COMPLETED, CANCELLED, NO_SHOW
+  notes      String?
+  pricePaid  Float?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model TenantLocalCache {
+  id             String   @id @default("singleton")
+  domain         String
+  licenseStatus  String   @default("ATTIVO") // ATTIVO, SOSPESO, IN_SCADENZA
+  enabledModules String   @default("[]") // JSON stringified array of module keys
+  brandName      String   @default("Barberly Salon")
+  logoUrl        String?
+  primaryColor   String   @default("#0f172a")
+  accentColor    String   @default("#d97706")
+  contactEmail   String?
+  phone          String?
+  lastSyncedAt   DateTime @default(now())
+}
