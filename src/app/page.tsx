@@ -1,249 +1,286 @@
-import { Header } from "@/components/layout/Header";
-import { LicenseBanner } from "@/components/layout/LicenseBanner";
-import { StatsOverview } from "@/components/dashboard/StatsOverview";
-import { ActiveModulesCard } from "@/components/dashboard/ActiveModulesCard";
-import { AppointmentTimeline } from "@/components/dashboard/AppointmentTimeline";
-import { QuickBookingModal } from "@/components/dashboard/QuickBookingModal";
+import { PublicHeader } from "@/components/public/PublicHeader";
+import { PublicFooter } from "@/components/public/PublicFooter";
+import { BookingWizard } from "@/components/public/BookingWizard";
 import { getTenantConfig } from "@/lib/taaaac-core";
 import { prisma, ensureDatabase } from "@/lib/db";
-import { Scissors, UserCheck, Calendar as CalendarIcon } from "lucide-react";
+import {
+  Scissors,
+  Star,
+  ShieldCheck,
+  Award,
+  Sparkles,
+  Clock,
+  CheckCircle,
+  MapPin,
+  Flame,
+} from "lucide-react";
+import { formatPrice } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
-export default async function HomePage() {
+interface PublicBarberItem {
+  id: string;
+  name: string;
+  nickname?: string | null;
+}
+
+interface PublicServiceItem {
+  id: string;
+  name: string;
+  description?: string | null;
+  durationMinutes: number;
+  price: number;
+  category: string;
+}
+
+// Dati dimostrativi di fallback garantiti
+const FALLBACK_SERVICES: PublicServiceItem[] = [
+  {
+    id: "s1",
+    name: "Taglio Sartoriale Barberly",
+    description: "Consulenza stile, taglio a forbice e rasoio, lavaggio rilassante con massaggio e styling finale.",
+    durationMinutes: 35,
+    price: 28.0,
+    category: "HAIR",
+  },
+  {
+    id: "s2",
+    name: "Rituale Barba Tradizionale",
+    description: "Modellatura barba, doppio panno caldo agli oli essenziali, rasatura rifinita e balsamo nutriente.",
+    durationMinutes: 25,
+    price: 20.0,
+    category: "BEARD",
+  },
+  {
+    id: "s3",
+    name: "Combo Vip (Taglio + Barba)",
+    description: "L'esperienza grooming completa: taglio sartoriale abbinato al rituale completo della barba.",
+    durationMinutes: 60,
+    price: 44.0,
+    category: "COMBO",
+  },
+  {
+    id: "s4",
+    name: "Trattamento Purificante Cute",
+    description: "Scrub ossigenante ed esfoliante per cute con fiala anticaduta e panno caldo defaticante.",
+    durationMinutes: 20,
+    price: 18.0,
+    category: "TREATMENT",
+  },
+];
+
+const FALLBACK_BARBERS: PublicBarberItem[] = [
+  { id: "b1", name: "Marco Rossi", nickname: "The Blade" },
+  { id: "b2", name: "Luca Fontana", nickname: "Razor Master" },
+];
+
+export default async function PublicHomePage() {
   const config = await getTenantConfig();
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-
-  // Assicura che il database e le tabelle siano inizializzati
-  await ensureDatabase();
-
-  let appointments: any[] = [];
-  let barbers: any[] = [];
-  let services: any[] = [];
-  let clients: any[] = [];
-  let totalClientsCount = 0;
+  // Inizializza DB e recupera dati con fallback garantito
+  let services = FALLBACK_SERVICES;
+  let barbers = FALLBACK_BARBERS;
 
   try {
-    const [dbAppointments, dbBarbers, dbServices, dbClients] = await Promise.all([
-      prisma.appointment.findMany({
-        where: {
-          date: {
-            gte: today,
-            lt: tomorrow,
-          },
-        },
-        include: {
-          barber: true,
-          client: true,
-          service: true,
-        },
-        orderBy: {
-          startTime: "asc",
+    await ensureDatabase();
+    const [dbServices, dbBarbers] = await Promise.all([
+      prisma.service.findMany({
+        where: { isActive: true },
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          durationMinutes: true,
+          price: true,
+          category: true,
         },
       }),
       prisma.barber.findMany({
         where: { isActive: true },
         select: { id: true, name: true, nickname: true },
       }),
-      prisma.service.findMany({
-        where: { isActive: true },
-        select: { id: true, name: true, price: true, durationMinutes: true },
-      }),
-      prisma.client.findMany({
-        select: { id: true, firstName: true, lastName: true, phone: true },
-      }),
     ]);
 
-    appointments = dbAppointments;
-    barbers = dbBarbers;
-    services = dbServices;
-    clients = dbClients;
-    totalClientsCount = await prisma.client.count();
+    if (dbServices.length > 0) services = dbServices;
+    if (dbBarbers.length > 0) barbers = dbBarbers;
   } catch (err) {
-    console.error("Avviso caricamento dati SQLite in HomePage:", err);
+    console.warn("Utilizzo dati di fallback vetrina pubblica:", err);
   }
 
-  // Calcolo metriche
-  const totalAppointments = appointments.length;
-  const completedAppointments = appointments.filter(
-    (a) => a.status === "COMPLETED"
-  ).length;
-  const estimatedRevenue = appointments
-    .filter((a) => a.status !== "CANCELLED")
-    .reduce((sum, a) => sum + (a.pricePaid || a.service.price), 0);
-
-  const hasWhatsApp = config.enabledModules.includes("WHATSAPP_REMINDERS");
-  const hasLoyalty = config.enabledModules.includes("LOYALTY_CARD");
-
-  const formattedDate = new Intl.DateTimeFormat("it-IT", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
-  }).format(new Date());
-
-  const optionsBarbers = barbers.map((b) => ({
-    id: b.id,
-    name: b.nickname ? `${b.name} (${b.nickname})` : b.name,
-  }));
-
-  const optionsClients = clients.map((c) => ({
-    id: c.id,
-    name: `${c.firstName} ${c.lastName} (${c.phone})`,
-  }));
-
   return (
-    <div className="min-h-screen flex flex-col bg-slate-50">
-      {/* Header con identità brand e stato licenza Taaaac */}
-      <Header config={config} />
+    <div className="min-h-screen flex flex-col bg-slate-50 text-slate-800">
+      {/* Header Vetrina */}
+      <PublicHeader config={config} />
 
-      {/* Banner se licenza non attiva */}
-      <LicenseBanner
-        status={config.licenseStatus}
-        expiresAt={config.licenseExpiresAt}
-      />
+      {/* Hero Section */}
+      <section className="relative overflow-hidden bg-gradient-to-b from-slate-900 to-slate-800 text-white py-16 sm:py-24">
+        <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#d97706_1px,transparent_1px)] [background-size:16px_16px]"></div>
 
-      {/* Contenuto Principale */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
-        {/* Intestazione pagina con data e azione rapida */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
-              <CalendarIcon className="w-3.5 h-3.5 text-amber-600" />
-              <span className="capitalize">{formattedDate}</span>
-            </div>
-            <h2 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-              Dashboard Poltrona & Cassa
-            </h2>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center space-y-6">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-xs font-bold uppercase tracking-wider">
+            <Flame className="w-3.5 h-3.5" />
+            <span>Grooming Club Tradizionale • Dal 2018</span>
           </div>
 
-          <div className="flex items-center gap-3">
-            <QuickBookingModal
-              barbers={optionsBarbers}
-              services={services}
-              clients={optionsClients}
-            />
+          <h2 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight max-w-3xl mx-auto leading-tight">
+            Tagli Sartoriali &amp; Rasatura a Regola d'Arte
+          </h2>
+
+          <p className="text-slate-300 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
+            Rilassati nella nostra poltrona d'epoca. Panni caldi, oli essenziali profumati e forbici artigianali per definire il tuo stile unico.
+          </p>
+
+          {/* Trust Badges */}
+          <div className="flex flex-wrap items-center justify-center gap-4 sm:gap-6 pt-2 text-xs font-semibold text-slate-300">
+            <span className="flex items-center gap-1.5 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700">
+              <Star className="w-4 h-4 text-amber-400 fill-amber-400" />
+              <span>4.9 / 5 stelle (340+ recensioni)</span>
+            </span>
+            <span className="flex items-center gap-1.5 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              <span>Prodotti Premium Naturali</span>
+            </span>
+            <span className="flex items-center gap-1.5 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700">
+              <Award className="w-4 h-4 text-amber-400" />
+              <span>Barber Master Certificati</span>
+            </span>
+          </div>
+
+          <div className="pt-4">
+            <a
+              href="#prenota"
+              className="taaaac-btn-accent text-sm py-3.5 px-8 shadow-lg inline-flex items-center gap-2 font-bold"
+            >
+              <Sparkles className="w-4 h-4" />
+              <span>Prenota il Tuo Taglio Adesso</span>
+            </a>
           </div>
         </div>
+      </section>
 
-        {/* Panoramica KPI Statistiche */}
-        <StatsOverview
-          totalAppointments={totalAppointments}
-          completedAppointments={completedAppointments}
-          estimatedRevenue={estimatedRevenue}
-          activeBarbersCount={barbers.length}
-          totalClientsCount={totalClientsCount}
-        />
-
-        {/* Layout a due colonne: Timeline a sinistra (2/3) e Moduli/Poltrone a destra (1/3) */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-          {/* Timeline Appuntamenti Odierni */}
-          <div className="lg:col-span-2">
-            <AppointmentTimeline
-              initialAppointments={appointments.map((a) => ({
-                id: a.id,
-                startTime: a.startTime,
-                endTime: a.endTime,
-                status: a.status,
-                notes: a.notes,
-                pricePaid: a.pricePaid,
-                barber: {
-                  id: a.barber.id,
-                  name: a.barber.name,
-                  nickname: a.barber.nickname,
-                },
-                client: {
-                  id: a.client.id,
-                  firstName: a.client.firstName,
-                  lastName: a.client.lastName,
-                  phone: a.client.phone,
-                  loyaltyPoints: a.client.loyaltyPoints,
-                },
-                service: {
-                  id: a.service.id,
-                  name: a.service.name,
-                  price: a.service.price,
-                  durationMinutes: a.service.durationMinutes,
-                },
-              }))}
-              hasWhatsAppModule={hasWhatsApp}
-              hasLoyaltyModule={hasLoyalty}
-            />
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-12 space-y-16">
+        {/* Sezione Listino Servizi */}
+        <section id="servizi" className="space-y-6">
+          <div className="text-center max-w-xl mx-auto">
+            <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              Il Nostro Listino Servizi
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-500 mt-1">
+              Ogni servizio include lavaggio preparatorio, styling con cera a base d'acqua e panno rinfrescante finale.
+            </p>
           </div>
 
-          {/* Colonna laterale: Moduli Add-on Taaaac & Poltrone in servizio */}
-          <div className="space-y-6">
-            {/* Scheda Moduli Taaaac */}
-            <ActiveModulesCard enabledModules={config.enabledModules} />
-
-            {/* Scheda Staff & Poltrone operative */}
-            <div className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs">
-              <h3 className="text-sm font-bold text-slate-900 mb-3 flex items-center gap-2">
-                <UserCheck className="w-4 h-4 text-slate-700" />
-                Barbieri in Servizio Oggi
-              </h3>
-              <div className="space-y-3">
-                {barbers.map((barber) => (
-                  <div
-                    key={barber.id}
-                    className="flex items-center justify-between p-3 rounded-xl bg-slate-50 border border-slate-200/80"
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-lg bg-slate-900 text-white font-bold text-xs flex items-center justify-center">
-                        {barber.name.charAt(0)}
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold text-slate-900">
-                          {barber.name}
-                        </p>
-                        {barber.nickname && (
-                          <p className="text-[11px] text-amber-600 font-medium">
-                            "{barber.nickname}"
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                      Disponibile
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {services.map((service) => (
+              <div
+                key={service.id}
+                className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs flex flex-col justify-between hover:shadow-sm transition-all"
+              >
+                <div>
+                  <div className="flex items-start justify-between gap-2 mb-2">
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md bg-amber-50 text-amber-800 border border-amber-200/60">
+                      {service.category}
+                    </span>
+                    <span className="text-lg font-extrabold text-slate-900 font-mono">
+                      {formatPrice(service.price)}
                     </span>
                   </div>
-                ))}
-              </div>
-            </div>
 
-            {/* Info nodo Taaaac */}
-            <div className="p-4 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 text-white shadow-xs">
-              <div className="flex items-center gap-2 mb-2">
-                <Scissors className="w-4 h-4 text-amber-400" />
-                <span className="text-xs font-bold uppercase tracking-wider text-amber-400">
-                  Taaaac Modular Engine
-                </span>
+                  <h4 className="font-bold text-slate-900 text-base">
+                    {service.name}
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-2 line-clamp-3 leading-relaxed">
+                    {service.description}
+                  </p>
+                </div>
+
+                <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                  <span className="flex items-center gap-1 text-slate-500 font-medium">
+                    <Clock className="w-3.5 h-3.5 text-slate-400" />
+                    {service.durationMinutes} min
+                  </span>
+                  <a
+                    href="#prenota"
+                    className="text-amber-600 hover:text-amber-700 font-bold"
+                  >
+                    Prenota →
+                  </a>
+                </div>
               </div>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                Questo nodo gestionale opera con database SQLite isolato per
-                garantire sovranità e velocità locale, mentre licenze e canali
-                sono centralizzati su <strong>taaaac.eu</strong>.
-              </p>
-            </div>
+            ))}
           </div>
-        </div>
+        </section>
+
+        {/* Sezione Team & Barbieri */}
+        <section id="team" className="space-y-6">
+          <div className="text-center max-w-xl mx-auto">
+            <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              I Barbieri in Salone
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-500 mt-1">
+              Professionisti esperti pronti a consigliarti il look più adatto alla fisionomia del tuo viso.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 max-w-2xl mx-auto">
+            {barbers.map((barber) => (
+              <div
+                key={barber.id}
+                className="bg-white border border-slate-200/90 rounded-2xl p-6 shadow-xs text-center space-y-3"
+              >
+                <div className="w-16 h-16 rounded-2xl bg-slate-900 text-amber-400 font-extrabold text-xl mx-auto flex items-center justify-center shadow-xs">
+                  {barber.name.charAt(0)}
+                </div>
+                <div>
+                  <h4 className="text-base font-bold text-slate-900">
+                    {barber.name}
+                  </h4>
+                  {barber.nickname && (
+                    <p className="text-xs text-amber-600 font-semibold">
+                      "{barber.nickname}"
+                    </p>
+                  )}
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Specialista sfumature a rasoio e barbe sagomate
+                  </p>
+                </div>
+                <div className="pt-2">
+                  <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-200">
+                    <CheckCircle className="w-3.5 h-3.5" />
+                    Poltrona Operativa
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* Sezione Wizard di Prenotazione Self-Service */}
+        <section className="space-y-6 pt-4">
+          <div className="text-center max-w-xl mx-auto">
+            <div className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 uppercase tracking-wider mb-1">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Self-Service Booking</span>
+            </div>
+            <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+              Prenota il tuo Posto in Poltrona
+            </h3>
+            <p className="text-xs sm:text-sm text-slate-500 mt-1">
+              Scegli il servizio e l'orario che preferisci in pochi secondi, senza attese telefoniche.
+            </p>
+          </div>
+
+          <BookingWizard
+            services={services}
+            barbers={barbers}
+            brandName={config.theme.brandName}
+            phone={config.contact?.phone}
+          />
+        </section>
       </main>
 
-      {/* Footer */}
-      <footer className="w-full border-t border-slate-200 bg-white py-4 mt-auto">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-500 gap-2">
-          <span>
-            © {new Date().getFullYear()} <strong>{config.theme.brandName}</strong> — Barberly v0.1.0
-          </span>
-          <span className="font-mono text-[11px] text-slate-400">
-            Node ID: {config.domain} | Managed by Alessio Guidelli (shadowkrad)
-          </span>
-        </div>
-      </footer>
+      {/* Footer con link discreto per l'esercente */}
+      <PublicFooter config={config} />
     </div>
   );
 }
