@@ -127,33 +127,39 @@ export function BookingWizard({
       id="prenota"
       className="bg-white border border-slate-200/90 rounded-2xl shadow-sm p-6 sm:p-8 max-w-4xl mx-auto"
     >
-      {/* Progress Steps Header */}
+      {/* Progress Steps Header stile Schedly */}
       {step < 5 && (
-        <div className="mb-8">
-          <div className="flex items-center justify-between text-xs font-semibold text-slate-500 uppercase tracking-wider mb-3">
-            <span className={step >= 1 ? "text-amber-600 font-bold" : ""}>
-              1. Servizio
-            </span>
-            <span className="text-slate-300">→</span>
-            <span className={step >= 2 ? "text-amber-600 font-bold" : ""}>
-              2. Barbiere
-            </span>
-            <span className="text-slate-300">→</span>
-            <span className={step >= 3 ? "text-amber-600 font-bold" : ""}>
-              3. Data & Ora
-            </span>
-            <span className="text-slate-300">→</span>
-            <span className={step >= 4 ? "text-amber-600 font-bold" : ""}>
-              4. I Tuoi Dati
-            </span>
+        <div className="mb-8 space-y-3">
+          <div className="flex items-center justify-center gap-1 sm:gap-2">
+            {["Trattamento", "Barbiere", "Data & Ora", "I tuoi dati"].map((label, idx) => {
+              const currentIdx = step - 1;
+              return (
+                <div key={idx} className="flex items-center">
+                  <div
+                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all ${
+                      idx < currentIdx
+                        ? "bg-amber-600 text-white"
+                        : idx === currentIdx
+                        ? "bg-amber-600 text-white ring-4 ring-amber-100"
+                        : "bg-slate-200 text-slate-500"
+                    }`}
+                  >
+                    {idx < currentIdx ? "✓" : idx + 1}
+                  </div>
+                  {idx < 3 && (
+                    <div
+                      className={`w-5 sm:w-10 h-0.5 ${
+                        idx < currentIdx ? "bg-amber-500" : "bg-slate-200"
+                      }`}
+                    />
+                  )}
+                </div>
+              );
+            })}
           </div>
-
-          <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-            <div
-              className="h-full bg-amber-600 transition-all duration-300 rounded-full"
-              style={{ width: `${(step / 4) * 100}%` }}
-            />
-          </div>
+          <p className="text-center text-xs font-semibold text-slate-400 uppercase tracking-wider">
+            Step {step} di 4: <span className="text-amber-600 font-bold">{["Trattamento", "Barbiere", "Data & Ora", "I tuoi dati"][step - 1]}</span>
+          </p>
         </div>
       )}
 
