@@ -1,32 +1,46 @@
 services:
-  barberly:
+  app:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: barberly-node
-    restart: unless-stopped
+    restart: always
+    expose:
+      - "3000"
+    ports:
+      - "${PORT_BIND:-3001}:3000"
+    env_file:
+      - .env
     environment:
-      - DATABASE_URL=file:/app/data/barberly.db
-      - TAAAAC_CORE_URL=${TAAAAC_CORE_URL:-https://taaaac.eu}
-      - TAAAAC_TENANT_DOMAIN=${TAAAAC_TENANT_DOMAIN:-barberly-demo.taaaac.eu}
-      - TAAAAC_TENANT_TOKEN=${TAAAAC_TENANT_TOKEN:-demo-token-barberly}
       - NODE_ENV=production
+      - DATABASE_URL=file:/app/data/app.db
+      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL:-https://${TENANT_DOMAIN:-barberly.taaaac.eu}}
+      - TAAAAC_TENANT_DOMAIN=${TENANT_DOMAIN:-barberly.taaaac.eu}
+      - TAAAAC_CORE_API_URL=${TAAAAC_CORE_API_URL:-https://taaaac.eu}
     volumes:
       - barberly_data:/app/data
-    networks:
-      - traefik-net
     labels:
-      # Traefik Reverse Proxy Configuration per [subdomain].taaaac.eu
+      # Routing Traefik per ecosistema multi-tenant Taaaac
       - "traefik.enable=true"
-      - "traefik.http.routers.barberly.rule=Host(`${TAAAAC_TENANT_DOMAIN}`)"
-      - "traefik.http.routers.barberly.entrypoints=websecure"
-      - "traefik.http.routers.barberly.tls.certresolver=letsencrypt"
-      - "traefik.http.services.barberly.loadbalancer.server.port=3000"
+      - "traefik.docker.network=taaaac-network"
+      # Router HTTP (Redirect automatico a HTTPS)
+      - "traefik.http.routers.barberly-${TENANT_ID:-demo}-http.rule=Host(`${TENANT_DOMAIN:-barberly.taaaac.eu}`)"
+      - "traefik.http.routers.barberly-${TENANT_ID:-demo}-http.entrypoints=web"
+      - "traefik.http.routers.barberly-${TENANT_ID:-demo}-http.middlewares=redirect-to-https@docker"
+      # Router HTTPS con certificato SSL Let's Encrypt automatico
+      - "traefik.http.routers.barberly-${TENANT_ID:-demo}.rule=Host(`${TENANT_DOMAIN:-barberly.taaaac.eu}`)"
+      - "traefik.http.routers.barberly-${TENANT_ID:-demo}.entrypoints=websecure"
+      - "traefik.http.routers.barberly-${TENANT_ID:-demo}.tls=true"
+      - "traefik.http.routers.barberly-${TENANT_ID:-demo}.tls.certresolver=letsencrypt"
+      # Service load balancer porta interna Next.js
+      - "traefik.http.services.barberly-${TENANT_ID:-demo}.loadbalancer.server.port=3000"
+    networks:
+      - default
+      - taaaac-network
 
 volumes:
   barberly_data:
-    driver: local
 
 networks:
-  traefik-net:
+  default:
+  taaaac-network:
     external: true
