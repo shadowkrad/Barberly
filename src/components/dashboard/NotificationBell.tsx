@@ -90,27 +90,42 @@ export default function NotificationBell({ placement = "sidebar" }: Props) {
     );
   };
 
-  // Chiudi cliccando fuori
+  // Chiudi cliccando fuori o premendo Esc
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (popoverRef.current && !popoverRef.current.contains(e.target as Node)) {
         setOpen(false);
       }
     }
-    if (open) document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape") {
+        setOpen(false);
+      }
+    }
+    if (open) {
+      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener("keydown", handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleKeyDown);
+    };
   }, [open]);
 
   return (
     <div className="relative inline-block" ref={popoverRef}>
       <button
         onClick={() => setOpen(!open)}
-        className="relative p-2 rounded-xl text-slate-500 hover:text-slate-800 hover:bg-slate-100 transition-colors cursor-pointer"
+        className={`relative p-2 rounded-xl transition-colors cursor-pointer ${
+          open
+            ? "bg-slate-800 text-white ring-1 ring-slate-700"
+            : "text-slate-300 hover:text-white hover:bg-slate-800/80"
+        }`}
         aria-label="Notifiche"
       >
-        <Bell className="w-5 h-5 text-slate-700" />
+        <Bell className="w-5 h-5 text-slate-200" />
         {unreadCount > 0 && (
-          <span className="absolute top-1 right-1 w-4 h-4 bg-amber-600 text-white rounded-full text-[10px] font-extrabold flex items-center justify-center ring-2 ring-white animate-pulse">
+          <span className="absolute top-1 right-1 w-4 h-4 bg-amber-500 text-slate-950 rounded-full text-[10px] font-black flex items-center justify-center ring-2 ring-slate-900 animate-pulse">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -118,15 +133,17 @@ export default function NotificationBell({ placement = "sidebar" }: Props) {
 
       {open && (
         <div
-          className={`absolute z-50 mt-2 w-80 sm:w-96 bg-white rounded-2xl shadow-2xl border border-slate-200/90 overflow-hidden animate-in fade-in-50 zoom-in-95 duration-150 ${
-            placement === "sidebar" ? "left-0 sm:left-auto right-0" : "right-0"
+          className={`z-50 bg-white rounded-2xl shadow-2xl border border-slate-200/90 overflow-hidden animate-in fade-in-50 zoom-in-95 duration-150 fixed inset-x-3 top-14 sm:inset-x-auto sm:top-full sm:mt-2 ${
+            placement === "sidebar"
+              ? "sm:absolute sm:left-0 sm:right-auto sm:w-80 md:w-96"
+              : "sm:absolute sm:right-0 sm:left-auto sm:w-80 md:w-96"
           }`}
         >
           <div className="px-4 py-3 bg-slate-50 border-b border-slate-100 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="font-bold text-xs text-slate-900">Notifiche Barberly</span>
               {unreadCount > 0 && (
-                <span className="text-[10px] font-black bg-amber-100 text-amber-800 px-1.5 py-0.2 rounded-full">
+                <span className="text-[10px] font-black bg-amber-100 text-amber-800 px-1.5 py-0.5 rounded-full">
                   {unreadCount} nuove
                 </span>
               )}
