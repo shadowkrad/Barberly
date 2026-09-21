@@ -156,7 +156,7 @@ export function AppointmentTimeline({
 
       {/* Lista Appuntamenti */}
       {filtered.length === 0 ? (
-        <div className="text-center py-12 text-slate-400 text-sm">
+        <div className="text-center py-12 text-slate-600 font-medium text-sm">
           Nessun appuntamento trovato per i criteri selezionati.
         </div>
       ) : (
@@ -181,7 +181,7 @@ export function AppointmentTimeline({
                       <span className="text-sm font-bold tracking-tight">
                         {item.startTime}
                       </span>
-                      <span className="text-[10px] text-slate-400">
+                      <span className="text-[10px] text-slate-300 font-medium">
                         {item.endTime}
                       </span>
                     </div>
