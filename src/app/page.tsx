@@ -1,6 +1,6 @@
+import Link from "next/link";
 import { PublicHeader } from "@/components/public/PublicHeader";
 import { PublicFooter } from "@/components/public/PublicFooter";
-import { BookingWizard } from "@/components/public/BookingWizard";
 import { getTenantConfig } from "@/lib/taaaac-core";
 import { prisma, ensureDatabase } from "@/lib/db";
 import {
@@ -11,8 +11,9 @@ import {
   Sparkles,
   Clock,
   CheckCircle,
-  MapPin,
   Flame,
+  ArrowRight,
+  Calendar,
 } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 
@@ -33,7 +34,6 @@ interface PublicServiceItem {
   category: string;
 }
 
-// Dati dimostrativi di fallback garantiti
 const FALLBACK_SERVICES: PublicServiceItem[] = [
   {
     id: "s1",
@@ -77,7 +77,6 @@ const FALLBACK_BARBERS: PublicBarberItem[] = [
 export default async function PublicHomePage() {
   const config = await getTenantConfig();
 
-  // Inizializza DB e recupera dati con fallback garantito
   let services = FALLBACK_SERVICES;
   let barbers = FALLBACK_BARBERS;
 
@@ -123,11 +122,11 @@ export default async function PublicHomePage() {
           </div>
 
           <h2 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight max-w-3xl mx-auto leading-tight">
-            Tagli Sartoriali &amp; Rasatura a Regola d'Arte
+            Tagli Sartoriali &amp; Rasatura a Regola d&apos;Arte
           </h2>
 
           <p className="text-slate-300 text-sm sm:text-base max-w-2xl mx-auto leading-relaxed">
-            Rilassati nella nostra poltrona d'epoca. Panni caldi, oli essenziali profumati e forbici artigianali per definire il tuo stile unico.
+            Rilassati nella nostra poltrona d&apos;epoca. Panni caldi, oli essenziali profumati e forbici artigianali per definire il tuo stile unico.
           </p>
 
           {/* Trust Badges */}
@@ -146,13 +145,21 @@ export default async function PublicHomePage() {
             </span>
           </div>
 
-          <div className="pt-4">
-            <a
-              href="#prenota"
+          {/* CTA Buttons: solo tasti verso /prenotazione come su Schedly */}
+          <div className="pt-4 flex flex-col sm:flex-row gap-3 justify-center items-center">
+            <Link
+              href="/prenotazione"
               className="taaaac-btn-accent text-sm py-3.5 px-8 shadow-lg inline-flex items-center gap-2 font-bold"
             >
               <Sparkles className="w-4 h-4" />
               <span>Prenota il Tuo Taglio Adesso</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+            <a
+              href="#servizi"
+              className="bg-slate-800/90 hover:bg-slate-700 text-white text-sm py-3.5 px-6 rounded-full border border-slate-600 transition"
+            >
+              Scopri il Listino
             </a>
           </div>
         </div>
@@ -166,7 +173,7 @@ export default async function PublicHomePage() {
               Il Nostro Listino Servizi
             </h3>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Ogni servizio include lavaggio preparatorio, styling con cera a base d'acqua e panno rinfrescante finale.
+              Ogni servizio include lavaggio preparatorio, styling con cera a base d&apos;acqua e panno rinfrescante finale.
             </p>
           </div>
 
@@ -199,12 +206,12 @@ export default async function PublicHomePage() {
                     <Clock className="w-3.5 h-3.5 text-slate-400" />
                     {service.durationMinutes} min
                   </span>
-                  <a
-                    href="#prenota"
+                  <Link
+                    href="/prenotazione"
                     className="text-amber-600 hover:text-amber-700 font-bold"
                   >
                     Prenota →
-                  </a>
+                  </Link>
                 </div>
               </div>
             ))}
@@ -237,7 +244,7 @@ export default async function PublicHomePage() {
                   </h4>
                   {barber.nickname && (
                     <p className="text-xs text-amber-600 font-semibold">
-                      "{barber.nickname}"
+                      &quot;{barber.nickname}&quot;
                     </p>
                   )}
                   <p className="text-xs text-slate-400 mt-0.5">
@@ -255,27 +262,26 @@ export default async function PublicHomePage() {
           </div>
         </section>
 
-        {/* Sezione Wizard di Prenotazione Self-Service */}
-        <section className="space-y-6 pt-4">
-          <div className="text-center max-w-xl mx-auto">
-            <div className="inline-flex items-center gap-1 text-xs font-bold text-amber-600 uppercase tracking-wider mb-1">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Self-Service Booking</span>
-            </div>
-            <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-              Prenota il tuo Posto in Poltrona
-            </h3>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Scegli il servizio e l'orario che preferisci in pochi secondi, senza attese telefoniche.
-            </p>
+        {/* Sezione Call-To-Action Prenotazione (Stile Schedly: SOLO IL TASTO, nessun form ingombrante inline) */}
+        <section className="bg-amber-50/70 rounded-3xl p-8 sm:p-12 border border-amber-200/80 text-center space-y-4 max-w-3xl mx-auto">
+          <div className="w-14 h-14 rounded-2xl bg-amber-500/20 border border-amber-500/40 text-amber-700 flex items-center justify-center mx-auto text-2xl shadow-xs">
+            📅
           </div>
-
-          <BookingWizard
-            services={services}
-            barbers={barbers}
-            brandName={config.theme.brandName}
-            phone={config.contact?.phone}
-          />
+          <h3 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+            Prenota il tuo Posto in pochi secondi
+          </h3>
+          <p className="text-xs sm:text-sm text-slate-600 max-w-xl mx-auto leading-relaxed">
+            Scegli il barbiere, il trattamento e l&apos;orario perfetto per te direttamente dal nostro calendario online. Riceverai conferma immediata e promemoria automatico.
+          </p>
+          <div className="pt-2">
+            <Link
+              href="/prenotazione"
+              className="taaaac-btn-accent text-sm py-3.5 px-8 shadow-md inline-flex items-center gap-2 font-bold"
+            >
+              <span>Apri Form Prenotazione</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
         </section>
       </main>
 
