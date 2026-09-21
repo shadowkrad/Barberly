@@ -1,4 +1,5 @@
 import React from "react";
+import Link from "next/link";
 import { Scissors, Phone, MessageSquare, Clock, MapPin, Sparkles } from "lucide-react";
 import { TenantConfigResponse } from "@/types/taaaac";
 
@@ -61,13 +62,13 @@ export function PublicHeader({ config }: PublicHeaderProps) {
           )}
 
           {/* Prenota Ora CTA */}
-          <a
-            href="#prenota"
-            className="taaaac-btn-accent text-xs sm:text-sm py-2 px-4 shadow-sm"
+          <Link
+            href="/prenotazione"
+            className="taaaac-btn-accent text-xs sm:text-sm py-2 px-4 shadow-sm inline-flex items-center gap-1.5"
           >
             <Sparkles className="w-4 h-4" />
             <span>Prenota Taglio</span>
-          </a>
+          </Link>
         </div>
       </div>
     </header>
