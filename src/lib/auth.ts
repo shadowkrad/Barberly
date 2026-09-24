@@ -1,7 +1,11 @@
 import { cookies } from "next/headers";
 
 const ADMIN_COOKIE_NAME = "barberly_admin_session";
-const DEFAULT_PIN = process.env.ADMIN_PIN || "1234";
+const DEFAULT_PIN =
+  process.env.ADMIN_PIN ||
+  process.env.INITIAL_ADMIN_PIN ||
+  process.env.INITIAL_ADMIN_PASSWORD ||
+  "1234";
 
 /**
  * Verifica se l'utente possiede una sessione di amministrazione valida
