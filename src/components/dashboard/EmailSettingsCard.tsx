@@ -50,8 +50,8 @@ export default function EmailSettingsCard() {
 
       <div className="p-3 rounded-xl bg-slate-900 border border-slate-700/60 space-y-2 text-xs">
         <div className="flex justify-between items-center text-slate-400">
-          <span>Mittente Certificato:</span>
-          <span className="font-mono text-slate-200">notifiche@taaaac.eu</span>
+          <span>Casella Mittente Sito:</span>
+          <span className="font-mono text-amber-400 font-semibold">noreply@barberly.taaaac.eu</span>
         </div>
         <div className="flex justify-between items-center text-slate-400">
           <span>Stato Consegna:</span>
