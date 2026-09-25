@@ -33,6 +33,17 @@ async function main() {
     },
   });
 
+  // Verifica modalità Produzione vs Demo (Issue #17)
+  const isDemo = process.env.IS_DEMO === "true" || (process.env.NODE_ENV !== "production" && process.env.IS_DEMO !== "false");
+
+  if (!isDemo) {
+    console.log("🔒 Modalità PRODUZIONE rilevata (IS_DEMO=false): database vergine inizializzato senza barbieri, clienti o appuntamenti demo.");
+    console.log("✅ Seed completato con successo (Zero Mock Data per produzione GDPR compliant)!");
+    return;
+  }
+
+  console.log("✨ Modalità DEMO attiva: inserimento barbieri, servizi, clienti ed appuntamenti di prova...");
+
   // Barbieri
   const marco = await prisma.barber.create({
     data: {

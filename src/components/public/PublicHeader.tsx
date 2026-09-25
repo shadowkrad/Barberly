@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { Scissors, Phone, MessageSquare, Clock, MapPin, Sparkles } from "lucide-react";
+import { Scissors, Phone, MessageSquare, Clock, MapPin, Sparkles, Lock } from "lucide-react";
 import { TenantConfigResponse } from "@/types/taaaac";
 
 interface PublicHeaderProps {
@@ -68,6 +68,15 @@ export function PublicHeader({ config }: PublicHeaderProps) {
           >
             <Sparkles className="w-4 h-4" />
             <span>Prenota Taglio</span>
+          </Link>
+
+          {/* Discreet Staff / Admin Login */}
+          <Link
+            href="/admin"
+            title="Area Riservata Staff"
+            className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
+          >
+            <Lock className="w-4 h-4" />
           </Link>
         </div>
       </div>
