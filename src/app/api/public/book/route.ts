@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma, ensureDatabase } from "@/lib/db";
+import { sendNotificationMail } from "@/lib/taaaac-mailer";
 
 export async function POST(req: Request) {
   try {
@@ -112,6 +113,35 @@ export async function POST(req: Request) {
         client: true,
       },
     });
+
+    // Invio notifica email automatica (se email presente)
+    if (client.email) {
+      const formattedDate = appointment.date.toLocaleDateString("it-IT", {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+        year: "numeric",
+      });
+      sendNotificationMail({
+        to: client.email,
+        subject: `Prenotazione confermata — Barberly Grooming Club`,
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 25px; border: 1px solid #fed7aa; border-radius: 16px; background: #ffffff;">
+            <h2 style="color: #d97706; margin-top: 0;">✂️ Prenotazione Confermata!</h2>
+            <p style="color: #334155; font-size: 15px;">Ciao <strong>${appointment.client.firstName}</strong>,</p>
+            <p style="color: #475569; font-size: 14px;">Il tuo appuntamento presso <strong>Barberly Grooming Club</strong> è confermato con successo.</p>
+            <div style="background: #fffbeb; border-left: 4px solid #f59e0b; padding: 14px 18px; border-radius: 8px; margin: 20px 0; font-size: 14px;">
+              <p style="margin: 4px 0; color: #78350f;"><strong>Servizio:</strong> ${appointment.service.name} (${appointment.service.price}€)</p>
+              <p style="margin: 4px 0; color: #78350f;"><strong>Barbiere:</strong> ${appointment.barber.name}</p>
+              <p style="margin: 4px 0; color: #78350f;"><strong>Data:</strong> ${formattedDate}</p>
+              <p style="margin: 4px 0; color: #78350f;"><strong>Orario:</strong> dalle ${appointment.startTime} alle ${appointment.endTime}</p>
+            </div>
+            <p style="color: #64748b; font-size: 13px;">Per qualsiasi modifica o necessità, puoi contattare direttamente il salone rispondendo a questa email.</p>
+          </div>
+        `,
+        senderName: "Barberly Grooming Club",
+      }).catch((mailErr) => console.error("Errore invio notifica email Barberly:", mailErr));
+    }
 
     return NextResponse.json({
       success: true,
