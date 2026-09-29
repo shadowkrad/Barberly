@@ -23,6 +23,7 @@ import {
   LogOut,
   ChevronRight,
 } from "lucide-react";
+import SidebarPwaInstall from "@/components/dashboard/SidebarPwaInstall";
 
 const baseNavLinks = [
   { href: "/dashboard", label: "Dashboard", icon: Scissors },
@@ -223,6 +224,7 @@ export default function DashboardSidebar() {
 
         {/* Bottom Bar: Link Vetrina & Info */}
         <div className="p-3 border-t border-slate-800 bg-slate-900/60 space-y-2">
+          <SidebarPwaInstall onAction={() => setMobileOpen(false)} />
           <Link
             href="/"
             target="_blank"
