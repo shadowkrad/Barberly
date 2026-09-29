@@ -36,7 +36,9 @@ export function PublicFooter({ config }: PublicFooterProps) {
               <Clock className="w-3.5 h-3.5 text-amber-400" />
               Orari di Apertura
             </h4>
-            <p className="text-slate-400">Lunedì – Sabato: 09:00 – 19:30</p>
+            <p className="text-slate-400">Lunedì: Chiuso</p>
+            <p className="text-slate-400">Martedì – Venerdì: 09:00 – 13:00 / 14:30 – 19:30</p>
+            <p className="text-slate-400">Sabato: 08:30 – 19:00 (Continuato)</p>
             <p className="text-slate-400">Domenica: Chiuso</p>
             <p className="text-amber-400 font-semibold pt-1">
               Si riceve su appuntamento

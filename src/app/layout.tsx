@@ -7,8 +7,20 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: `${config.theme.brandName} | Barberly (Taaaac Modular)`,
     description: "Gestionale verticale per barbieri e saloni di grooming maschile.",
+    manifest: "/manifest.json",
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "default",
+      title: "Barberly",
+    },
   };
 }
+
+export const viewport = {
+  themeColor: "#0f172a",
+  width: "device-width",
+  initialScale: 1,
+};
 
 export default async function RootLayout({
   children,
