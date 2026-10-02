@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Lock, KeyRound, ArrowRight, ShieldCheck, Scissors } from "lucide-react";
+import { Lock, KeyRound, ArrowRight, ShieldCheck, Scissors, Fingerprint, Smartphone } from "lucide-react";
+import { startAuthentication, browserSupportsWebAuthn } from "@simplewebauthn/browser";
 
 interface AdminPinLoginProps {
   brandName: string;
@@ -11,8 +12,60 @@ interface AdminPinLoginProps {
 export function AdminPinLogin({ brandName }: AdminPinLoginProps) {
   const [pin, setPin] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
+  const [biometricLoading, setBiometricLoading] = useState<boolean>(false);
+  const [supportsWebAuthn, setSupportsWebAuthn] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const router = useRouter();
+
+  useEffect(() => {
+    setSupportsWebAuthn(browserSupportsWebAuthn());
+  }, []);
+
+  const handleBiometricLogin = async () => {
+    setErrorMsg(null);
+    setBiometricLoading(true);
+
+    try {
+      // 1. Richiedi opzioni challenge
+      const optRes = await fetch("/api/auth/device/login-options", {
+        method: "POST",
+      });
+
+      if (!optRes.ok) {
+        const err = await optRes.json();
+        throw new Error(err.error || "Nessun dispositivo registrato su questo browser.");
+      }
+
+      const options = await optRes.json();
+
+      // 2. Chiedi al chip biometrico o PIN del dispositivo di firmare la challenge
+      const authResp = await startAuthentication(options);
+
+      // 3. Invia la firma al server per verifica crittografica
+      const verifyRes = await fetch("/api/auth/device/login-verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ response: authResp }),
+      });
+
+      if (!verifyRes.ok) {
+        const err = await verifyRes.json();
+        throw new Error(err.error || "Autenticazione biometrica fallita");
+      }
+
+      // Login completato! Ricarica per entrare nella dashboard
+      router.refresh();
+    } catch (err: any) {
+      console.error("Errore login biometrico:", err);
+      if (err.name === "NotAllowedError") {
+        setErrorMsg("Riconoscimento biometrico annullato.");
+      } else {
+        setErrorMsg(err.message || "Accesso biometrico non riuscito.");
+      }
+    } finally {
+      setBiometricLoading(false);
+    }
+  };
 
   const handleDigitClick = (digit: string) => {
     if (pin.length < 6) {
@@ -77,6 +130,26 @@ export function AdminPinLogin({ brandName }: AdminPinLoginProps) {
             <span>Area Riservata Esercente</span>
           </p>
         </div>
+
+        {/* Pulsante rapido Accesso Biometrico PWA */}
+        {supportsWebAuthn && (
+          <div className="pt-1">
+            <button
+              type="button"
+              onClick={handleBiometricLogin}
+              disabled={biometricLoading || loading}
+              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-amber-600 via-amber-700 to-amber-800 hover:from-amber-700 hover:to-amber-900 active:scale-98 text-white font-bold py-3 px-4 rounded-2xl text-xs sm:text-sm transition shadow-xs cursor-pointer disabled:opacity-60"
+            >
+              <Fingerprint className="w-4 h-4" />
+              <span>{biometricLoading ? "Verifica biometrica in corso..." : "Accedi con FaceID / Impronta / PIN"}</span>
+            </button>
+            <div className="flex items-center gap-3 py-3">
+              <div className="flex-1 h-px bg-slate-200" />
+              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">oppure con PIN tastierino</span>
+              <div className="flex-1 h-px bg-slate-200" />
+            </div>
+          </div>
+        )}
 
         {/* PIN Indicators */}
         <div className="py-2">
