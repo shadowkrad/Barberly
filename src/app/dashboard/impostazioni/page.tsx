@@ -18,8 +18,9 @@ import {
   Sparkles,
 } from "lucide-react";
 import EmailSettingsCard from "@/components/dashboard/EmailSettingsCard";
+import RegisteredDevicesCard from "@/components/dashboard/RegisteredDevicesCard";
 
-type SettingsTab = "bottega" | "orari" | "email" | "whatsapp" | "aspetto";
+type SettingsTab = "bottega" | "orari" | "email" | "whatsapp" | "dispositivi" | "aspetto";
 
 interface TabItem {
   id: SettingsTab;
@@ -57,6 +58,13 @@ const TABS: TabItem[] = [
     shortLabel: "WhatsApp",
     icon: "💬",
     description: "Promemoria automatici ai clienti 2 ore prima del taglio",
+  },
+  {
+    id: "dispositivi",
+    label: "Dispositivi PWA",
+    shortLabel: "Dispositivi",
+    icon: "📱",
+    description: "Accesso rapido con FaceID/PIN e revoca smartphone da remoto",
   },
   {
     id: "aspetto",
@@ -349,6 +357,13 @@ export default function BarberlyImpostazioniPage() {
               Ciao &#123;&#123;nome_cliente&#125;&#125;! Ti ricordiamo il tuo appuntamento per &#123;&#123;servizio&#125;&#125; da Gentleman Barber Club oggi alle &#123;&#123;orario&#125;&#125;. Per gestire la prenotazione: &#123;&#123;link_appuntamento&#125;&#125;
             </div>
           </div>
+        </div>
+      )}
+
+      {/* TAB: DISPOSITIVI PWA & BIOMETRIA */}
+      {activeTab === "dispositivi" && (
+        <div className="space-y-6">
+          <RegisteredDevicesCard />
         </div>
       )}
 
