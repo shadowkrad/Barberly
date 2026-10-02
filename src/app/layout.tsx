@@ -13,7 +13,6 @@ export async function generateMetadata(): Promise<Metadata> {
       statusBarStyle: "black-translucent",
       title: config.theme.brandName || "Barberly",
     },
-    },
   };
 }
 
