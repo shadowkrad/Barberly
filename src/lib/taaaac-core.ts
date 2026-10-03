@@ -16,6 +16,7 @@ const FALLBACK_CONFIG: TenantConfigResponse = {
     primaryColor: "#0f172a",
     accentColor: "#d97706",
     logoUrl: null,
+    faviconUrl: null,
   },
   contact: {
     email: "info@barberly.taaaac.eu",
@@ -82,6 +83,7 @@ export async function getTenantConfig(): Promise<TenantConfigResponse> {
           primaryColor: cached.primaryColor,
           accentColor: cached.accentColor,
           logoUrl: cached.logoUrl,
+          faviconUrl: cached.faviconUrl,
         },
         contact: {
           email: cached.contactEmail || undefined,
@@ -106,6 +108,7 @@ async function cacheTenantLocally(config: TenantConfigResponse) {
         enabledModules: JSON.stringify(config.enabledModules),
         brandName: config.theme.brandName,
         logoUrl: config.theme.logoUrl,
+        faviconUrl: config.theme.faviconUrl,
         primaryColor: config.theme.primaryColor,
         accentColor: config.theme.accentColor,
         contactEmail: config.contact?.email,
@@ -119,6 +122,7 @@ async function cacheTenantLocally(config: TenantConfigResponse) {
         enabledModules: JSON.stringify(config.enabledModules),
         brandName: config.theme.brandName,
         logoUrl: config.theme.logoUrl,
+        faviconUrl: config.theme.faviconUrl,
         primaryColor: config.theme.primaryColor,
         accentColor: config.theme.accentColor,
         contactEmail: config.contact?.email,

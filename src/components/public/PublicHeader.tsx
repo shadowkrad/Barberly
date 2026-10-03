@@ -16,12 +16,21 @@ export function PublicHeader({ config }: PublicHeaderProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
         {/* Brand */}
         <div className="flex items-center gap-3">
-          <div
-            className="w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow-sm"
-            style={{ backgroundColor: theme.primaryColor }}
-          >
-            <Scissors className="w-6 h-6 text-amber-400" />
-          </div>
+          {theme.logoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={theme.logoUrl}
+              alt={theme.brandName}
+              className="h-11 w-auto max-w-[160px] object-contain rounded-xl"
+            />
+          ) : (
+            <div
+              className="w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow-sm"
+              style={{ backgroundColor: theme.primaryColor }}
+            >
+              <Scissors className="w-6 h-6 text-amber-400" />
+            </div>
+          )}
           <div>
             <h1 className="text-xl font-extrabold tracking-tight text-slate-900 leading-tight">
               {theme.brandName}

@@ -8,6 +8,10 @@ export async function generateMetadata(): Promise<Metadata> {
     title: `${config.theme.brandName} | Barberly (Taaaac Modular)`,
     description: "Gestionale verticale per barbieri e saloni di grooming maschile.",
     manifest: "/manifest.webmanifest",
+    icons: {
+      icon: config.theme.faviconUrl || "/icon.svg",
+      apple: config.theme.faviconUrl || "/icon.svg",
+    },
     appleWebApp: {
       capable: true,
       statusBarStyle: "black-translucent",
@@ -40,6 +44,8 @@ export default async function RootLayout({
   return (
     <html lang="it">
       <head>
+        <link rel="icon" href={config.theme.faviconUrl || "/icon.svg"} />
+        <link rel="apple-touch-icon" href={config.theme.faviconUrl || "/icon.svg"} />
         <style dangerouslySetInnerHTML={{ __html: dynamicCssVariables }} />
       </head>
       <body className="min-h-screen bg-slate-50 flex flex-col antialiased selection:bg-amber-100 selection:text-amber-900">

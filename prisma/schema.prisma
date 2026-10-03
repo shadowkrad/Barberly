@@ -71,6 +71,7 @@ model TenantLocalCache {
   enabledModules String   @default("[]") // JSON stringified array of module keys
   brandName      String   @default("Barberly Salon")
   logoUrl        String?
+  faviconUrl     String?
   primaryColor   String   @default("#0f172a")
   accentColor    String   @default("#d97706")
   contactEmail   String?
