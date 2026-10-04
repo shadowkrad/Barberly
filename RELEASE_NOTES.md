@@ -1,18 +1,16 @@
-# 💈 Barberly — Release Notes v1.0.1
+# 💈 Barberly — Release Notes v1.0.2
 
-## Novità della Versione 1.0.1
+## Novità della Versione 1.0.2
 
-### 1. 📲 Shortcut App Desktop & Mobile (PWA)
-- Aggiunta la voce *"📲 Installa App · Aggiungi a Home / Desktop"* nel menu laterale (`☰`), senza banner invasivi sul calendario appuntamenti.
-- Modale guidato a schermo intero (`createPortal` su `document.body`, `z-[9999]`) con istruzioni mirate per iOS Safari, prompt 1-click per Android e scorciatoia per browser Desktop.
+### 1. 🎨 Personalizzazione Brand: Logo Bottega & Favicon Browser
+- Possibilità di caricare il logo ufficiale del salone da *Dashboard > Impostazioni > Aspetto & Brand* con ridimensionamento automatico WebP ad alta risoluzione.
+- Favicon 128x128 personalizzata generata all'istante, visibile sulla linguetta del browser e come icona dell'app salvata su smartphone.
+- Live preview in tempo reale sia dell'header pubblico sia della scheda browser prima del salvataggio.
 
-### 2. ⚙️ Impostazioni Modulari a 5 Schede
-- Riorganizzazione della sezione `/dashboard/impostazioni` con navigazione a schede:
-  - 🏢 **Bottega & Sede**: Ragione sociale, P.IVA, indirizzo e recapiti;
-  - ⏰ **Orari & Turni**: Orari di apertura bottega, turni operatore e gestione poltrone;
-  - 📧 **Email & Notifiche**: Gestione casella Taaaac Mail Engine e notifiche;
-  - 💬 **WhatsApp & SMS**: Notifiche automatiche e promemoria clienti;
-  - 🎨 **Aspetto & Brand**: Logo della bottega, colore tema amber/gold e personalizzazione scontrino.
+### 2. ⚙️ Impostazioni Moderne a 2 Colonne (Stile Stripe Dark)
+- Riprogettazione completa del pannello impostazioni con layout a due colonne, icone Lucide e finiture professionali scure.
+- Organizzazione ottimizzata per una gestione rapida di bottega, orari di apertura, turni operatori e poltrone di lavoro.
 
-### 3. ⏰ Sincronizzazione Orari Apertura Bottega nel Footer
-- Allineamento orari reali da impostazioni con visualizzazione giorni feriali e chiusure domenicali/lunedì.
+### 3. 📲 Accesso Biometrico PWA & Gestione Dispositivi (WebAuthn)
+- Supporto all'accesso rapido biometrico (Face ID, Touch ID o impronta digitale) senza dover digitare continuamente credenziali alla postazione cassa/poltrona.
+- Gestione remota dei dispositivi autorizzati con revoca accessi in 1 click.
