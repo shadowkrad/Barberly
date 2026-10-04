@@ -16,6 +16,9 @@ import {
   Globe,
   Bell,
   Sparkles,
+  Scissors,
+  Smartphone,
+  ChevronRight,
 } from "lucide-react";
 import EmailSettingsCard from "@/components/dashboard/EmailSettingsCard";
 import RegisteredDevicesCard from "@/components/dashboard/RegisteredDevicesCard";
@@ -26,7 +29,8 @@ interface TabItem {
   id: SettingsTab;
   label: string;
   shortLabel: string;
-  icon: string;
+  iconComponent: React.ElementType;
+  shortDescription: string;
   description: string;
 }
 
@@ -35,42 +39,48 @@ const TABS: TabItem[] = [
     id: "bottega",
     label: "Bottega & Sede",
     shortLabel: "Bottega",
-    icon: "💈",
+    iconComponent: Scissors,
+    shortDescription: "Anagrafica, poltrone e sede",
     description: "Anagrafica salone, indirizzo, recapiti telefonici e poltrone",
   },
   {
     id: "orari",
     label: "Orari & Turni",
     shortLabel: "Orari",
-    icon: "⏰",
+    iconComponent: Clock,
+    shortDescription: "Apertura, pause e turni",
     description: "Orari di apertura settimanali, pause pranzo e turni di lavoro",
   },
   {
     id: "email",
     label: "Email & Notifiche",
     shortLabel: "Email",
-    icon: "📧",
+    iconComponent: Mail,
+    shortDescription: "Taaaac Engine e ricevute",
     description: "Canale email Taaaac Mail Engine e conferme prenotazione",
   },
   {
     id: "whatsapp",
     label: "WhatsApp & SMS",
     shortLabel: "WhatsApp",
-    icon: "💬",
+    iconComponent: MessageSquare,
+    shortDescription: "Promemoria automatici 2h prima",
     description: "Promemoria automatici ai clienti 2 ore prima del taglio",
   },
   {
     id: "dispositivi",
     label: "Dispositivi PWA",
     shortLabel: "Dispositivi",
-    icon: "📱",
+    iconComponent: Smartphone,
+    shortDescription: "FaceID e PIN biometrico",
     description: "Accesso rapido con FaceID/PIN e revoca smartphone da remoto",
   },
   {
     id: "aspetto",
     label: "Aspetto & Brand",
     shortLabel: "Aspetto",
-    icon: "🎨",
+    iconComponent: Palette,
+    shortDescription: "Tema scuro, accento oro e logo",
     description: "Personalizzazione tema scuro, accento oro/ambra e logo",
   },
 ];
@@ -211,9 +221,10 @@ export default function BarberlyImpostazioniPage() {
   };
 
   const currentTab = TABS.find((t) => t.id === activeTab);
+  const ActiveIcon = currentTab?.iconComponent || Scissors;
 
   return (
-    <div className="space-y-6 max-w-5xl mx-auto pb-12">
+    <div className="space-y-6 max-w-6xl mx-auto pb-12">
       {/* Intestazione Principale */}
       <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -273,43 +284,87 @@ export default function BarberlyImpostazioniPage() {
         </div>
       )}
 
-      {/* SOTTOMENU / TABS BAR */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-1.5 sm:p-2 shadow-xs">
-        <nav className="flex items-center gap-1.5 overflow-x-auto no-scrollbar scroll-smooth" aria-label="Impostazioni Barberly">
-          {TABS.map((tab) => {
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center gap-2 px-3.5 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium whitespace-nowrap transition-all cursor-pointer ${
-                  isActive
-                    ? "bg-amber-500 text-slate-950 font-bold shadow-xs shadow-amber-500/30"
-                    : "text-slate-400 hover:bg-slate-800/80 hover:text-white"
-                }`}
-              >
-                <span className="text-base">{tab.icon}</span>
-                <span className="hidden sm:inline">{tab.label}</span>
-                <span className="sm:hidden">{tab.shortLabel}</span>
-              </button>
-            );
-          })}
-        </nav>
-      </div>
+      {/* LAYOUT A 2 COLONNE: NAVIGAZIONE VERTICALE A SINISTRA + CONTENUTI A DESTRA */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+        {/* COLONNA SINISTRA: MENU SEZIONI IMPOSTAZIONI */}
+        <aside className="lg:col-span-4 xl:col-span-3 lg:sticky lg:top-6 space-y-3">
+          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-2 sm:p-2.5 shadow-xs">
+            <div className="px-3 py-2 border-b border-slate-800 hidden lg:block">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                Sezioni Impostazioni
+              </span>
+            </div>
 
-      {/* Intestazione Sottomenu Corrente */}
-      {currentTab && (
-        <div className="flex items-center justify-between px-1">
-          <div>
-            <h2 className="text-base font-bold text-white flex items-center gap-2">
-              <span>{currentTab.icon}</span>
-              <span>{currentTab.label}</span>
-            </h2>
-            <p className="text-xs text-slate-400 mt-0.5">{currentTab.description}</p>
+            <nav
+              className="flex lg:flex-col gap-1.5 overflow-x-auto lg:overflow-visible no-scrollbar pt-1 lg:pt-2"
+              aria-label="Sezioni Impostazioni Barberly"
+            >
+              {TABS.map((tab) => {
+                const isActive = activeTab === tab.id;
+                const IconComp = tab.iconComponent;
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setActiveTab(tab.id)}
+                    className={`group flex items-center justify-between w-full p-2.5 sm:p-3 rounded-xl text-left transition-all cursor-pointer shrink-0 lg:shrink ${
+                      isActive
+                        ? "bg-amber-500/10 text-amber-300 font-semibold border border-amber-500/40 shadow-xs"
+                        : "text-slate-400 hover:bg-slate-800/80 hover:text-white border border-transparent"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div
+                        className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors ${
+                          isActive
+                            ? "bg-amber-500 text-slate-950 shadow-xs shadow-amber-500/30"
+                            : "bg-slate-800 text-slate-400 group-hover:bg-slate-700 group-hover:text-slate-200"
+                        }`}
+                      >
+                        <IconComp className="w-4 h-4" />
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-xs sm:text-sm font-semibold truncate flex items-center gap-1.5">
+                          <span className="hidden sm:inline">{tab.label}</span>
+                          <span className="sm:hidden">{tab.shortLabel}</span>
+                        </div>
+                        <p className="text-[11px] text-slate-500 font-normal truncate hidden lg:block">
+                          {tab.shortDescription}
+                        </p>
+                      </div>
+                    </div>
+                    <ChevronRight
+                      className={`w-4 h-4 shrink-0 transition-transform hidden lg:block ${
+                        isActive
+                          ? "text-amber-400 translate-x-0.5"
+                          : "text-slate-600 opacity-0 group-hover:opacity-100"
+                      }`}
+                    />
+                  </button>
+                );
+              })}
+            </nav>
           </div>
-        </div>
-      )}
+        </aside>
+
+        {/* COLONNA DESTRA: PANNELLO CONTENUTI */}
+        <main className="lg:col-span-8 xl:col-span-9 space-y-6">
+          {/* Header contestuale scheda attiva */}
+          {currentTab && (
+            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center shrink-0">
+                  <ActiveIcon className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-base sm:text-lg font-black text-white">
+                    {currentTab.label}
+                  </h2>
+                  <p className="text-xs text-slate-400 mt-0.5">{currentTab.description}</p>
+                </div>
+              </div>
+            </div>
+          )}
 
       {/* CONTENUTO SCHEDE */}
 
@@ -770,6 +825,8 @@ export default function BarberlyImpostazioniPage() {
           </div>
         </div>
       )}
+        </main>
+      </div>
     </div>
   );
 }
