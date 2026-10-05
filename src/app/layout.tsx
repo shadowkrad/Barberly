@@ -4,9 +4,13 @@ import { getTenantConfig } from "@/lib/taaaac-core";
 
 export async function generateMetadata(): Promise<Metadata> {
   const config = await getTenantConfig();
+  const brand = config.theme.brandName || "Barber Shop";
   return {
-    title: `${config.theme.brandName} | Barberly (Taaaac Modular)`,
-    description: "Gestionale verticale per barbieri e saloni di grooming maschile.",
+    title: {
+      default: brand,
+      template: `%s | ${brand}`,
+    },
+    description: `Servizi e prenotazioni online per ${brand}`,
     manifest: "/manifest.webmanifest",
     icons: {
       icon: config.theme.faviconUrl || "/icon.svg",
@@ -15,7 +19,7 @@ export async function generateMetadata(): Promise<Metadata> {
     appleWebApp: {
       capable: true,
       statusBarStyle: "black-translucent",
-      title: config.theme.brandName || "Barberly",
+      title: brand,
     },
   };
 }

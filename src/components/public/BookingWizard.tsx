@@ -194,7 +194,7 @@ export function BookingWizard({
                         {srv.name}
                       </h4>
                       <p className="text-xs text-slate-500 mt-1 line-clamp-2">
-                        {srv.description || "Servizio professionale Barberly."}
+                        {srv.description || "Trattamento professionale dedicato allo stile maschile."}
                       </p>
                     </div>
                     <span className="text-sm font-extrabold text-amber-700 font-mono ml-2">
@@ -520,7 +520,7 @@ export function BookingWizard({
               Ti aspettiamo in poltrona, {bookingSuccess.clientName}!
             </h3>
             <p className="text-xs text-slate-500 mt-1">
-              Il tuo appuntamento è stato registrato con successo nel sistema Barberly.
+              Il tuo appuntamento è stato registrato con successo. Ti aspettiamo!
             </p>
           </div>
 

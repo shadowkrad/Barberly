@@ -37,7 +37,7 @@ interface PublicServiceItem {
 const FALLBACK_SERVICES: PublicServiceItem[] = [
   {
     id: "s1",
-    name: "Taglio Sartoriale Barberly",
+    name: "Taglio Sartoriale & Styling",
     description: "Consulenza stile, taglio a forbice e rasoio, lavaggio rilassante con massaggio e styling finale.",
     durationMinutes: 35,
     price: 28.0,
