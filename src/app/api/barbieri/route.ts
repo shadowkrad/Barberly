@@ -24,7 +24,7 @@ export async function GET() {
       totaleAppuntamenti: b._count.appointments,
     }));
 
-    return NextResponse.json({ barbieri: formatted });
+    return NextResponse.json({ barbieri: formatted, operatori: formatted });
   } catch (error) {
     console.error("GET /api/barbieri error:", error);
     return NextResponse.json({ error: "Errore recupero staff" }, { status: 500 });
