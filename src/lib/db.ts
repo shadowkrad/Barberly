@@ -126,7 +126,32 @@ export async function ensureDatabase(): Promise<void> {
         );
       `);
 
+      await prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS "WorkingHours" (
+          "id" TEXT NOT NULL PRIMARY KEY,
+          "dayOfWeek" INTEGER NOT NULL UNIQUE,
+          "startTime" TEXT NOT NULL DEFAULT '09:00',
+          "endTime" TEXT NOT NULL DEFAULT '19:30',
+          "breakStart" TEXT DEFAULT '13:00',
+          "breakEnd" TEXT DEFAULT '14:00',
+          "isOpen" BOOLEAN NOT NULL DEFAULT 1,
+          "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
       // 2. Controllo presenza dati iniziali
+      const hoursCount = await prisma.workingHours.count();
+      if (hoursCount === 0) {
+        // Lunedì (1) -> Sabato (6) aperto, Domenica (0) chiuso
+        for (let day = 0; day <= 6; day++) {
+          const isOpen = day >= 1 && day <= 6;
+          await prisma.$executeRawUnsafe(`
+            INSERT OR IGNORE INTO "WorkingHours" ("id", "dayOfWeek", "startTime", "endTime", "breakStart", "breakEnd", "isOpen", "createdAt", "updatedAt")
+            VALUES ('wh_${day}', ${day}, '09:00', '19:30', '13:00', '14:00', ${isOpen ? 1 : 0}, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP);
+          `);
+        }
+      }
       const barberCount = await prisma.barber.count();
       if (barberCount === 0) {
         await prisma.$executeRawUnsafe(`

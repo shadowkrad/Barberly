@@ -10,6 +10,7 @@ import { TAAAAC_ADDONS } from "@/lib/taaaac-client";
 import {
   Scissors,
   Calendar,
+  CalendarCheck,
   Clock,
   Users,
   UserCheck,
@@ -32,6 +33,7 @@ const baseNavLinks = [
   { href: "/dashboard/clienti", label: "Clienti (CRM)", icon: Users },
   { href: "/dashboard/barbieri", label: "Barbieri & Poltrone", icon: UserCheck },
   { href: "/dashboard/listino", label: "Listino & Combo", icon: Tag },
+  { href: "/dashboard/orari", label: "Orari & Disponibilità", icon: CalendarCheck },
 ];
 
 const addonNavLinks = [

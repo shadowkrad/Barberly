@@ -13,6 +13,7 @@ import {
   Award,
 } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
+import { generaLinkWhatsApp, generaMessaggioWhatsAppPromemoria } from "@/lib/whatsapp";
 
 export interface AppointmentItem {
   id: string;
@@ -232,10 +233,19 @@ export function AppointmentTimeline({
                     {/* Pulsante WhatsApp se modulo attivo */}
                     {hasWhatsAppModule && (
                       <a
-                        href={`https://wa.me/${item.client.phone.replace(/[^0-9]/g, "")}`}
+                        href={generaLinkWhatsApp(
+                          item.client.phone,
+                          generaMessaggioWhatsAppPromemoria({
+                            nomeCliente: item.client.firstName,
+                            servizio: item.service.name,
+                            dataOra: `oggi alle ore ${item.startTime}`,
+                            barbiere: item.barber.name,
+                            nomeSalone: "Barberly Studio",
+                          })
+                        )}
                         target="_blank"
                         rel="noopener noreferrer"
-                        title="Invia WhatsApp al cliente"
+                        title="Invia promemoria WhatsApp al cliente"
                         className="p-2.5 rounded-xl border border-slate-200 text-slate-600 hover:text-emerald-600 hover:border-emerald-200 hover:bg-emerald-50 transition-colors"
                       >
                         <MessageSquare className="w-4 h-4" />

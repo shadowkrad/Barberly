@@ -14,6 +14,7 @@ model Barber {
   email        String?
   phone        String?
   avatarUrl    String?
+  color        String        @default("#d97706")
   isActive     Boolean       @default(true)
   appointments Appointment[]
   createdAt    DateTime      @default(now())
@@ -27,6 +28,8 @@ model Service {
   durationMinutes Int           @default(30)
   price           Float
   category        String        @default("HAIR") // HAIR, BEARD, COMBO, TREATMENT
+  color           String        @default("#d97706")
+  order           Int           @default(0)
   isActive        Boolean       @default(true)
   appointments    Appointment[]
   createdAt       DateTime      @default(now())
@@ -34,49 +37,69 @@ model Service {
 }
 
 model Client {
-  id            String        @id @default(cuid())
-  firstName     String
-  lastName      String
-  phone         String
-  email         String?
-  notes         String?
-  loyaltyPoints Int           @default(0)
-  appointments  Appointment[]
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+  id             String        @id @default(cuid())
+  firstName      String
+  lastName       String
+  phone          String
+  email          String?
+  notes          String?       // Note stile, sfumatura, barba
+  loyaltyPoints  Int           @default(0)
+  privacyConsent Boolean       @default(true)
+  appointments   Appointment[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 }
 
 model Appointment {
+  id            String   @id @default(cuid())
+  barberId      String
+  barber        Barber   @relation(fields: [barberId], references: [id], onDelete: Cascade)
+  clientId      String
+  client        Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  serviceId     String
+  service       Service  @relation(fields: [serviceId], references: [id], onDelete: Restrict)
+  date          DateTime
+  startTime     String   // Formato "HH:mm" es. "10:30"
+  endTime       String   // Formato "HH:mm" es. "11:00"
+  status        String   @default("CONFIRMED") // PENDING, CONFIRMED, IN_PROGRESS, COMPLETED, CANCELLED, NO_SHOW
+  channel       String   @default("WEB") // WEB, PHONE, WALK_IN, WHATSAPP, MANUAL
+  notes         String?
+  internalNotes String?
+  pricePaid     Float?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model WorkingHours {
   id         String   @id @default(cuid())
-  barberId   String
-  barber     Barber   @relation(fields: [barberId], references: [id], onDelete: Cascade)
-  clientId   String
-  client     Client   @relation(fields: [clientId], references: [id], onDelete: Cascade)
-  serviceId  String
-  service    Service  @relation(fields: [serviceId], references: [id], onDelete: Restrict)
-  date       DateTime
-  startTime  String   // Formato "HH:mm" es. "10:30"
-  endTime    String   // Formato "HH:mm" es. "11:00"
-  status     String   @default("CONFIRMED") // PENDING, CONFIRMED, COMPLETED, CANCELLED, NO_SHOW
-  notes      String?
-  pricePaid  Float?
+  dayOfWeek  Int      @unique // 0 = Domenica, 1 = Lunedì, ..., 6 = Sabato
+  startTime  String   @default("09:00")
+  endTime    String   @default("19:30")
+  breakStart String?  @default("13:00")
+  breakEnd   String?  @default("14:00")
+  isOpen     Boolean  @default(true)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 }
 
 model TenantLocalCache {
-  id             String   @id @default("singleton")
-  domain         String
-  licenseStatus  String   @default("ATTIVO") // ATTIVO, SOSPESO, IN_SCADENZA
-  enabledModules String   @default("[]") // JSON stringified array of module keys
-  brandName      String   @default("Barberly Salon")
-  logoUrl        String?
-  faviconUrl     String?
-  primaryColor   String   @default("#0f172a")
-  accentColor    String   @default("#d97706")
-  contactEmail   String?
-  phone          String?
-  lastSyncedAt   DateTime @default(now())
+  id                  String   @id @default("singleton")
+  domain              String
+  licenseStatus       String   @default("ATTIVO") // ATTIVO, SOSPESO, IN_SCADENZA
+  enabledModules      String   @default("[]") // JSON stringified array of module keys
+  brandName           String   @default("Barberly Salon")
+  logoUrl             String?
+  faviconUrl          String?
+  primaryColor        String   @default("#0f172a")
+  accentColor         String   @default("#d97706")
+  contactEmail        String?
+  phone               String?
+  address             String   @default("Via Roma, 42 — Milano (MI)")
+  whatsappNumber      String?  @default("+39 340 123 4567")
+  whatsappProvider    String?  @default("WA_ME")
+  slotIntervalMinutes Int      @default(30)
+  cancelHoursNotice   Int      @default(24)
+  lastSyncedAt        DateTime @default(now())
 }
 
 // Dispositivi PWA FIDO2 / Biometrici autorizzati per avvio rapido con PIN/Impronta
