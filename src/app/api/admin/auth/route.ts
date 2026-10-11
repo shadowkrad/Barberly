@@ -4,7 +4,8 @@ import { verifyAdminPin, ADMIN_COOKIE_NAME } from "@/lib/auth";
 
 export async function POST(req: Request) {
   try {
-    const { pin } = await req.json();
+    const body = await req.json();
+    const pin = body?.pin !== undefined && body?.pin !== null ? String(body.pin).trim() : "";
 
     if (!pin || !verifyAdminPin(pin)) {
       return NextResponse.json(

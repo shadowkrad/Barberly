@@ -30,8 +30,9 @@ export async function isAdminAuthenticated(): Promise<boolean> {
 /**
  * Valida il PIN fornito rispetto alla configurazione
  */
-export function verifyAdminPin(inputPin: string): boolean {
-  return inputPin.trim() === DEFAULT_PIN.trim();
+export function verifyAdminPin(inputPin: any): boolean {
+  if (!inputPin) return false;
+  return String(inputPin).trim() === DEFAULT_PIN.trim();
 }
 
 /**
