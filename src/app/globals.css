@@ -52,3 +52,16 @@
 * {
   -webkit-tap-highlight-color: transparent;
 }
+
+/* Custom sleek mobile-style scrollbar */
+::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.4);
+  border-radius: 9999px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
