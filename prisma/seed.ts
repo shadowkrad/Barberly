@@ -33,8 +33,8 @@ async function main() {
     },
   });
 
-  // Verifica modalità Produzione vs Demo (Issue #17)
-  const isDemo = process.env.IS_DEMO === "true" || (process.env.NODE_ENV !== "production" && process.env.IS_DEMO !== "false");
+  // Verifica modalità Produzione vs Demo (Default DEMO attivo per modulo showcase)
+  const isDemo = process.env.IS_DEMO !== "false";
 
   if (!isDemo) {
     console.log("🔒 Modalità PRODUZIONE rilevata (IS_DEMO=false): database vergine inizializzato senza barbieri, clienti o appuntamenti demo.");
