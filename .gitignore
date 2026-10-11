@@ -18,6 +18,7 @@ yarn-error.log*
 
 # Prisma / SQLite
 prisma/*.db
+!prisma/template.db
 prisma/*.db-journal
 data/
 
@@ -25,3 +26,4 @@ data/
 .DS_Store
 *.pem
 Thumbs.db
+*.tsbuildinfo

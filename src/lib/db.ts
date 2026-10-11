@@ -9,21 +9,40 @@ const globalForPrisma = globalThis as unknown as {
 
 function createPrismaClient(): PrismaClient {
   if (process.env.VERCEL) {
-    const tmpDbPath = "/tmp/dev.db";
-    const bundledDbPath = path.join(process.cwd(), "prisma", "dev.db");
+    const tmpDbPath = path.join("/tmp", "barberly.db");
+    const templatePath = path.join(process.cwd(), "prisma", "template.db");
+    const devDbPath = path.join(process.cwd(), "prisma", "dev.db");
+    const sourcePath = fs.existsSync(templatePath) ? templatePath : devDbPath;
 
-    try {
-      if (!fs.existsSync(tmpDbPath) && fs.existsSync(bundledDbPath)) {
-        fs.copyFileSync(bundledDbPath, tmpDbPath);
+    let shouldCopy = !fs.existsSync(tmpDbPath);
+    if (!shouldCopy && fs.existsSync(sourcePath)) {
+      try {
+        const srcStat = fs.statSync(sourcePath);
+        const tmpStat = fs.statSync(tmpDbPath);
+        if (srcStat.mtimeMs > tmpStat.mtimeMs || srcStat.size !== tmpStat.size) {
+          shouldCopy = true;
+        }
+      } catch {
+        shouldCopy = true;
       }
-    } catch (err) {
-      console.warn("Avviso copia database SQLite in /tmp su Vercel:", err);
     }
+
+    if (shouldCopy && fs.existsSync(sourcePath)) {
+      try {
+        fs.copyFileSync(sourcePath, tmpDbPath);
+        console.log("[Vercel SQLite] Inizializzato database SQLite in /tmp/barberly.db da template");
+      } catch (err) {
+        console.warn("Avviso copia database SQLite in /tmp su Vercel:", err);
+      }
+    }
+
+    const resolvedUrl = `file:${tmpDbPath}`;
+    process.env.DATABASE_URL = resolvedUrl;
 
     return new PrismaClient({
       datasources: {
         db: {
-          url: "file:/tmp/dev.db",
+          url: resolvedUrl,
         },
       },
       log: ["error"],
