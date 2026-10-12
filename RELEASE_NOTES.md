@@ -1,5 +1,30 @@
 # 💈 Barberly — Release Notes
 
+## Novità della Versione 1.1.0 (In Sviluppo)
+
+### Novità in Lavorazione
+- Evoluzione grafica avanzata per Barber Shop
+- Nuovi strumenti di fidelizzazione e cassa
+
+---
+
+## Novità della Versione 1.0.4
+
+### 1. ⏱️ Gestione Multi-Servizio & Calcolo Orario nel Calendario
+- **Calcolo Automatico Tempo Extra**: Supporto completo per appuntamenti con più servizi abbinati (es. Taglio Capelli + Modellatura Barba + Trattamento Cute) con calcolo immediato dell'estensione oraria.
+- **Badge "+Xm extra" nella Griglia Salone**: Visualizzazione immediata della durata prolungata sulla timeline giornaliera dei barbieri.
+- **Dettaglio Completo nel Popup**: Scheda appuntamento arricchita con scomposizione dei servizi e confronto tra orario di termine base e orario effettivo finale.
+
+### 2. 📱 Modale Appuntamento Mobile-Friendly
+- **Scrolling Ottimizzato per Tablet e Smartphone**: L'interfaccia si adatta dinamicamente a qualsiasi risoluzione evitando che la scheda vada fuori videata.
+- **Accesso Rapido Contatto Cliente**: Bottoni per chiamata telefonica e messaggio WhatsApp sempre visibili e comodamente cliccabili.
+
+### 3. 🛠️ Modifica Prenotazione & Allineamento Operatori
+- **Modale di Modifica Rafforzata**: Aggiornamento reattivo di data, orario e servizi con anteprima dei tempi e senza chiusure impreviste.
+- **Stabilità Assegnazione Poltrone**: Migliorata la gestione delle disponibilità e degli orari di pausa.
+
+---
+
 ## Novità della Versione 1.0.3
 
 ### 1. 🖼️ Sistema Brand & Vetrina Adattiva (Zero Deformazioni)
