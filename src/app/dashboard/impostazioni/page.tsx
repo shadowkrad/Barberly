@@ -243,23 +243,25 @@ export default function BarberlyImpostazioniPage() {
           </p>
         </div>
 
-        <button
-          onClick={() => handleSave()}
-          disabled={saving}
-          className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-400 active:scale-98 text-slate-950 font-bold text-sm rounded-xl shadow-xs shadow-amber-500/20 transition-all cursor-pointer disabled:opacity-60"
-        >
-          {saving ? (
-            <>
-              <span className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-              <span>Salvataggio...</span>
-            </>
-          ) : (
-            <>
-              <Save className="w-4 h-4" />
-              <span>Salva Modifiche</span>
-            </>
-          )}
-        </button>
+        {activeTab !== "aspetto" && (
+          <button
+            onClick={() => handleSave()}
+            disabled={saving}
+            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-400 active:scale-98 text-slate-950 font-bold text-sm rounded-xl shadow-xs shadow-amber-500/20 transition-all cursor-pointer disabled:opacity-60"
+          >
+            {saving ? (
+              <>
+                <span className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                <span>Salvataggio...</span>
+              </>
+            ) : (
+              <>
+                <Save className="w-4 h-4" />
+                <span>Salva Modifiche</span>
+              </>
+            )}
+          </button>
+        )}
       </div>
 
       {/* Feedback Alert */}
