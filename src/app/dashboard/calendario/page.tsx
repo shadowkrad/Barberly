@@ -1441,20 +1441,20 @@ export default function BarberlyCalendarioPage() {
                     })()}
                   </div>
                   <p className="text-base font-bold text-slate-900 mt-0.5">
-                    {selected.cliente.nome} {selected.cliente.cognome}
+                    {selected.cliente?.nome || "Cliente"} {selected.cliente?.cognome || ""}
                   </p>
                 </div>
                 <div className="flex items-center gap-1.5">
-                  {selected.cliente.telefono && (
+                  {selected.cliente?.telefono && (
                     <>
                       <a
                         href={generaLinkWhatsApp(
                           selected.cliente.telefono,
                           generaMessaggioWhatsAppPromemoria({
-                            nomeCliente: selected.cliente.nome,
-                            servizio: selected.servizio.nome,
+                            nomeCliente: selected.cliente?.nome || "Cliente",
+                            servizio: selected.servizio?.nome || "Servizio",
                             dataOra: format(new Date(selected.dataOra), "d MMMM 'alle' HH:mm", { locale: it }),
-                            barbiere: selected.barbiere.nome,
+                            barbiere: selected.barbiere?.nome || "Barbiere",
                             nomeSalone: "Barberly Studio",
                           })
                         )}
@@ -1481,7 +1481,7 @@ export default function BarberlyCalendarioPage() {
                 <div className="p-2.5 border rounded-xl bg-white border-slate-200">
                   <span className="text-slate-400 block">Servizio</span>
                   <span className="font-bold text-slate-800 text-sm">
-                    {selected.servizio.nome}
+                    {selected.servizio?.nome || "Servizio"}
                   </span>
                 </div>
                 <div className="p-2.5 border rounded-xl bg-white border-slate-200">
@@ -1489,10 +1489,10 @@ export default function BarberlyCalendarioPage() {
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <span
                       className="w-2.5 h-2.5 rounded-full shrink-0"
-                      style={{ backgroundColor: selected.barbiere.colore || "#d97706" }}
+                      style={{ backgroundColor: selected.barbiere?.colore || "#d97706" }}
                     />
                     <span className="font-bold text-slate-800 text-sm">
-                      {selected.barbiere.nome}
+                      {selected.barbiere?.nome || "Barbiere"}
                     </span>
                   </div>
                 </div>
@@ -1544,22 +1544,23 @@ export default function BarberlyCalendarioPage() {
               )}
             </div>
 
-            <div className="mt-4 pt-3 flex items-center justify-between border-t border-slate-100">
+            <div className="mt-4 pt-3 flex flex-col gap-2 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => {
-                  const selRaw = selected.raw;
+                  const selToEdit = selected.raw || selected;
                   setSelected(null);
-                  setModificaModalAppt(selRaw);
+                  setModificaModalAppt(selToEdit);
                 }}
-                className="text-xs text-amber-700 hover:text-amber-800 font-bold cursor-pointer"
+                className="w-full py-2.5 px-4 bg-amber-500 hover:bg-amber-400 active:scale-98 text-slate-950 text-xs font-bold rounded-xl shadow-md shadow-amber-500/20 transition flex items-center justify-center gap-2 cursor-pointer"
               >
-                ✏️ Modifica / Riprogramma
+                <span>✏️</span>
+                <span>Modifica Prenotazione (Data, Ora, Barbiere, Servizio)</span>
               </button>
               <button
                 type="button"
                 onClick={() => setSelected(null)}
-                className="text-xs text-slate-500 hover:text-slate-700 font-semibold cursor-pointer"
+                className="w-full py-1.5 text-xs text-slate-500 hover:text-slate-700 font-semibold cursor-pointer text-center"
               >
                 Chiudi
               </button>

@@ -309,7 +309,7 @@ export default function BarberlyAppuntamentiPage() {
                         onClick={() => setSelectedAppt(a)}
                         className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-lg text-xs"
                       >
-                        Gestisci
+                        Modifica
                       </button>
                     </div>
                   </div>
@@ -381,7 +381,7 @@ export default function BarberlyAppuntamentiPage() {
                             onClick={() => setSelectedAppt(a)}
                             className="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-lg transition cursor-pointer"
                           >
-                            Gestisci
+                            Modifica
                           </button>
                         </div>
                       </td>
