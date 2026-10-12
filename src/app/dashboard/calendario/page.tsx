@@ -56,6 +56,7 @@ interface Appuntamento {
   noteInterne?: string | null;
   channel?: string | null;
   prezzoStimato?: number | null;
+  nomiServizi?: string | null;
   cliente: {
     id: string;
     nome: string;
@@ -69,6 +70,7 @@ interface Appuntamento {
     nome: string;
     colore: string;
     prezzo: number;
+    durata?: number;
   };
   raw: any;
 }
@@ -155,6 +157,27 @@ const ORE_GIORNATA = Array.from({ length: TOTAL_HOURS }, (_, i) => i + START_HOU
 
 function getOrarioFine(dataOra: string | Date, durataMinuti: number): Date {
   return addMinutes(new Date(dataOra), durataMinuti || 30);
+}
+
+// Calcola le informazioni su durata base e tempo in più (differenza di orario) per appuntamenti multi-servizio
+function getDettaglioOrarioServizi(a: Appuntamento) {
+  const baseDurata = a.servizio?.durata || (a.durata > 0 ? a.durata : 30);
+  const tempoExtra = Math.max(0, (a.durata || 30) - baseDurata);
+  const hasExtra =
+    tempoExtra > 0 ||
+    Boolean(a.nomiServizi && a.nomiServizi.includes(" + ")) ||
+    Boolean(a.servizio?.nome && a.servizio.nome.includes(" + "));
+
+  const baseFine = addMinutes(new Date(a.dataOra), baseDurata);
+  const fineEffettiva = getOrarioFine(a.dataOra, a.durata);
+
+  return {
+    baseDurata,
+    tempoExtra,
+    hasExtra,
+    baseFine,
+    fineEffettiva,
+  };
 }
 
 function getNextAvailableTimeSlot(date: Date): string {
@@ -451,7 +474,7 @@ export default function BarberlyCalendarioPage() {
 
           const fullDate = new Date(`${datePart}T${String(h || 9).padStart(2, "0")}:${String(m || 0).padStart(2, "0")}:00`);
 
-          const durata = raw.service?.durationMinutes || 30;
+          const durata = raw.durationMinutes || raw.durata || raw.service?.durationMinutes || 30;
 
           const stato =
             raw.status === "PENDING"
@@ -475,6 +498,7 @@ export default function BarberlyCalendarioPage() {
             noteInterne: raw.internalNotes || (raw.channel ? `[${raw.channel}]` : null),
             channel: raw.channel,
             prezzoStimato: raw.pricePaid ?? raw.service?.price,
+            nomiServizi: raw.nomiServizi || null,
             cliente: {
               id: raw.client?.id || "",
               nome: raw.client?.firstName || "Cliente",
@@ -490,9 +514,10 @@ export default function BarberlyCalendarioPage() {
             },
             servizio: {
               id: raw.service?.id || "",
-              nome: raw.service?.name || "Taglio Sartoriale",
+              nome: raw.nomiServizi || raw.service?.name || "Taglio Sartoriale",
               colore: raw.service?.color || "#d97706",
               prezzo: raw.service?.price || 28,
+              durata: raw.service?.durationMinutes || 30,
             },
             raw,
           };
@@ -1047,6 +1072,7 @@ export default function BarberlyCalendarioPage() {
                           const badge = getCanaleBadge(a.channel, a.noteInterne);
                           const pastel = getPastelBarberlyStyle(a.servizio?.colore);
                           const opColore = a.barbiere?.colore || "#d97706";
+                          const { baseDurata, tempoExtra } = getDettaglioOrarioServizi(a);
 
                           const isPassato = currentTime > inizio;
                           const isAttesa = a.stato === "IN_ATTESA" && !isPassato;
@@ -1069,18 +1095,25 @@ export default function BarberlyCalendarioPage() {
                                 borderLeftWidth: "4px",
                                 borderLeftColor: opColore,
                               }}
-                              title={`${format(inizio, "HH:mm")} - ${format(fine, "HH:mm")} • ${a.cliente.nome} ${a.cliente.cognome} • ${a.servizio.nome} (${a.barbiere.nome})`}
+                              title={`${format(inizio, "HH:mm")} - ${format(fine, "HH:mm")} • ${a.cliente.nome} ${a.cliente.cognome} • ${a.servizio.nome} (${a.durata}m)${tempoExtra > 0 ? ` [Base: ${baseDurata}m + Tempo aggiunto: +${tempoExtra}m (fine ore ${format(fine, "HH:mm")})]` : ""} (${a.barbiere.nome})`}
                             >
                               <div className="flex items-center justify-between font-bold text-[11px] text-slate-900 leading-tight">
                                 <span>
                                   {format(inizio, "HH:mm")} - {format(fine, "HH:mm")}
                                 </span>
-                                <span
-                                  className="text-[9px] px-1 py-0.2 rounded font-mono font-semibold"
-                                  style={{ color: pastel.textColor }}
-                                >
-                                  {a.durata}m
-                                </span>
+                                <div className="flex items-center gap-1">
+                                  <span
+                                    className="text-[9px] px-1 py-0.2 rounded font-mono font-semibold"
+                                    style={{ color: pastel.textColor }}
+                                  >
+                                    {a.durata}m
+                                  </span>
+                                  {tempoExtra > 0 && (
+                                    <span className="text-[8px] font-black px-1.5 py-0.2 rounded bg-amber-500 text-slate-950 font-mono shadow-2xs">
+                                      +{tempoExtra}m
+                                    </span>
+                                  )}
+                                </div>
                               </div>
 
                               <div className="font-extrabold text-slate-900 text-xs truncate mt-0.5">
@@ -1504,41 +1537,95 @@ export default function BarberlyCalendarioPage() {
                 </div>
               </div>
 
-              {/* Riquadro Orario Inizio, Fine, Durata e Prezzo */}
+              {/* Riquadro Dettaglio Servizi e Calcolo Differenza Orario */}
               {(() => {
+                const dett = getDettaglioOrarioServizi(selected);
                 const inizio = new Date(selected.dataOra);
                 const fine = getOrarioFine(selected.dataOra, selected.durata);
+                const baseFine = dett.baseFine;
+
                 return (
-                  <div className="p-3 border border-amber-200/80 rounded-2xl bg-amber-50/30 text-xs space-y-1.5">
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-500">Data Seduta:</span>
-                      <span className="font-bold text-slate-800 capitalize">
-                        {format(inizio, "EEEE d MMMM yyyy", { locale: it })}
-                      </span>
-                    </div>
-                    <div className="flex justify-between items-center py-1 border-t border-b border-amber-100">
-                      <span className="text-slate-600 font-semibold">Orario:</span>
-                      <div className="flex items-center gap-1.5">
-                        <span className="font-bold text-slate-900 text-sm">{format(inizio, "HH:mm")}</span>
-                        <span className="text-amber-500 font-bold">→</span>
-                        <span className="font-extrabold text-amber-900 bg-amber-100 px-2 py-0.5 rounded-md text-sm border border-amber-200">
-                          {format(fine, "HH:mm")}
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-slate-500">Durata:</span>
-                      <span className="font-bold text-amber-700">
-                        {selected.durata} min (fine ore {format(fine, "HH:mm")})
-                      </span>
-                    </div>
-                    {selected.prezzoStimato !== undefined && selected.prezzoStimato !== null && (
-                      <div className="flex justify-between pt-1 border-t border-amber-100">
-                        <span className="text-slate-500">Prezzo Listino:</span>
-                        <span className="font-bold text-emerald-700">€{Number(selected.prezzoStimato).toFixed(2)}</span>
+                  <>
+                    {/* Se ci sono più servizi o tempo extra, mostra la scheda esplicativa del ricalcolo orario */}
+                    {dett.hasExtra && (
+                      <div className="p-3.5 bg-gradient-to-br from-amber-500/10 via-amber-500/5 to-slate-900 border border-amber-500/30 rounded-2xl text-xs space-y-2.5 shadow-2xs">
+                        <div className="flex items-center justify-between pb-1.5 border-b border-amber-500/20">
+                          <div className="flex items-center gap-1.5 font-black text-amber-900">
+                            <span className="text-base">⏱️</span>
+                            <span>Calcolo Differenza Orario</span>
+                          </div>
+                          <span className="bg-amber-500 text-slate-950 font-black text-[10px] px-2.5 py-0.5 rounded-full shadow-2xs">
+                            +{dett.tempoExtra} min di tempo in più
+                          </span>
+                        </div>
+
+                        {/* Ricalcolo dell'orario di fine nel calendario */}
+                        <div className="bg-white/95 p-2.5 rounded-xl border border-amber-200 space-y-1 text-[11px]">
+                          <div className="flex justify-between items-center text-slate-500">
+                            <span>Orario con solo servizio base ({dett.baseDurata} min):</span>
+                            <span className="font-mono line-through text-slate-400">
+                              {format(inizio, "HH:mm")} → {format(baseFine, "HH:mm")}
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center text-amber-700 font-bold">
+                            <span>Tempo in più per servizi aggiuntivi:</span>
+                            <span className="font-mono bg-amber-100 px-1.5 py-0.2 rounded text-amber-900">
+                              +{dett.tempoExtra} min
+                            </span>
+                          </div>
+                          <div className="flex justify-between items-center font-extrabold text-slate-950 pt-1 border-t border-amber-100">
+                            <span className="flex items-center gap-1">
+                              <span>📅</span>
+                              <span>Orario effettivo nel calendario:</span>
+                            </span>
+                            <span className="font-mono text-xs bg-amber-500 text-slate-950 px-2 py-0.5 rounded-lg shadow-2xs">
+                              {format(inizio, "HH:mm")} → {format(fine, "HH:mm")} ({selected.durata} min)
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     )}
-                  </div>
+
+                    {/* Riquadro Standard Orario Inizio, Fine, Durata e Prezzo */}
+                    <div className="p-3 border border-amber-200/80 rounded-2xl bg-amber-50/30 text-xs space-y-1.5">
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-500">Data Seduta:</span>
+                        <span className="font-bold text-slate-800 capitalize">
+                          {format(inizio, "EEEE d MMMM yyyy", { locale: it })}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center py-1 border-t border-b border-amber-100">
+                        <span className="text-slate-600 font-semibold">Orario:</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="font-bold text-slate-900 text-sm">{format(inizio, "HH:mm")}</span>
+                          <span className="text-amber-500 font-bold">→</span>
+                          <span className="font-extrabold text-amber-900 bg-amber-100 px-2 py-0.5 rounded-md text-sm border border-amber-200">
+                            {format(fine, "HH:mm")}
+                          </span>
+                          {dett.tempoExtra > 0 && (
+                            <span className="text-[10px] bg-amber-500 text-slate-950 font-extrabold px-1.5 py-0.5 rounded-md">
+                              +{dett.tempoExtra}m
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-500">Durata:</span>
+                        <span className="font-bold text-amber-700">
+                          {selected.durata} min
+                          {dett.tempoExtra > 0
+                            ? ` (${dett.baseDurata}m base + ${dett.tempoExtra}m aggiunti)`
+                            : ` (fine ore ${format(fine, "HH:mm")})`}
+                        </span>
+                      </div>
+                      {selected.prezzoStimato !== undefined && selected.prezzoStimato !== null && (
+                        <div className="flex justify-between pt-1 border-t border-amber-100">
+                          <span className="text-slate-500">Prezzo Listino:</span>
+                          <span className="font-bold text-emerald-700">€{Number(selected.prezzoStimato).toFixed(2)}</span>
+                        </div>
+                      )}
+                    </div>
+                  </>
                 );
               })()}
 

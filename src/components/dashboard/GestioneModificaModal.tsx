@@ -659,6 +659,27 @@ export default function GestioneModificaModal({
             </div>
           </div>
 
+          {/* Calcolo Differenza Orario */}
+          {selectedServiceIds.length > 1 && (() => {
+            const baseServ = servizi.find((s) => s.id === selectedServiceIds[0]);
+            const baseD = baseServ?.durationMinutes || baseServ?.durata || 30;
+            const extraD = Math.max(0, durata - baseD);
+            return (
+              <div className="p-2.5 bg-amber-500/10 border border-amber-500/30 rounded-xl text-[11px] text-amber-200 flex items-center justify-between shadow-2xs">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-sm">⏱️</span>
+                  <span>
+                    <strong>Differenza orario nel calendario:</strong>{" "}
+                    +{extraD} min di tempo in più rispetto al servizio principale ({baseD}m).
+                  </span>
+                </div>
+                <span className="bg-amber-500 text-slate-950 font-black text-[10px] px-2 py-0.5 rounded-full shadow-2xs shrink-0">
+                  +{extraD} min
+                </span>
+              </div>
+            );
+          })()}
+
           {/* Note */}
           <div>
             <label className="text-[11px] font-bold uppercase text-slate-400 block mb-1">
