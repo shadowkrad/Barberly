@@ -72,6 +72,7 @@ export default function GestioneModificaModal({
   const [durata, setDurata] = useState<number>(30);
   const [barberId, setBarberId] = useState("");
   const [serviceId, setServiceId] = useState("");
+  const [selectedServiceIds, setSelectedServiceIds] = useState<string[]>([]);
   const [pricePaid, setPricePaid] = useState<string>("");
   const [status, setStatus] = useState("CONFIRMED");
   const [notes, setNotes] = useState("");
@@ -138,13 +139,15 @@ export default function GestioneModificaModal({
         ""
       );
 
-      setServiceId(
+      const sid =
         currentAppt.service?.id ||
         currentAppt.serviceId ||
         currentAppt.trattamento?.id ||
         currentAppt.trattamentoId ||
-        ""
-      );
+        "";
+      const initialIds = sid ? [sid] : [];
+      setSelectedServiceIds(initialIds);
+      setServiceId(sid);
 
       const price =
         currentAppt.pricePaid ??
@@ -172,15 +175,59 @@ export default function GestioneModificaModal({
     return `${String(endH).padStart(2, "0")}:${String(endM).padStart(2, "0")}`;
   };
 
-  const handleServiceChange = (newServiceId: string) => {
-    setServiceId(newServiceId);
-    const found = servizi.find((s) => s.id === newServiceId);
-    if (found) {
-      const d = found.durationMinutes || found.durata;
-      if (d) setDurata(d);
-      const p = found.price ?? found.prezzo;
-      if (p !== undefined && p !== null) setPricePaid(String(p));
+  const handleAddService = (newSid: string) => {
+    if (!newSid || selectedServiceIds.includes(newSid)) return;
+    const nextIds = [...selectedServiceIds, newSid];
+    setSelectedServiceIds(nextIds);
+    setServiceId(nextIds[0]);
+
+    let sumDurata = 0;
+    let sumPrezzo = 0;
+    let hasPrezzo = false;
+
+    for (const id of nextIds) {
+      const found = servizi.find((s) => s.id === id);
+      if (found) {
+        sumDurata += found.durationMinutes || found.durata || 30;
+        const p = found.price ?? found.prezzo;
+        if (p != null) {
+          sumPrezzo += p;
+          hasPrezzo = true;
+        }
+      }
     }
+
+    if (sumDurata > 0) setDurata(sumDurata);
+    if (hasPrezzo) setPricePaid(String(sumPrezzo));
+  };
+
+  const handleRemoveService = (sidToRemove: string) => {
+    if (selectedServiceIds.length <= 1) {
+      alert("L'appuntamento deve avere almeno un servizio.");
+      return;
+    }
+    const nextIds = selectedServiceIds.filter((id) => id !== sidToRemove);
+    setSelectedServiceIds(nextIds);
+    setServiceId(nextIds[0]);
+
+    let sumDurata = 0;
+    let sumPrezzo = 0;
+    let hasPrezzo = false;
+
+    for (const id of nextIds) {
+      const found = servizi.find((s) => s.id === id);
+      if (found) {
+        sumDurata += found.durationMinutes || found.durata || 30;
+        const p = found.price ?? found.prezzo;
+        if (p != null) {
+          sumPrezzo += p;
+          hasPrezzo = true;
+        }
+      }
+    }
+
+    if (sumDurata > 0) setDurata(sumDurata);
+    if (hasPrezzo) setPricePaid(String(sumPrezzo));
   };
 
   const notifySuccess = () => {
@@ -190,20 +237,38 @@ export default function GestioneModificaModal({
 
   const handleSave = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    if (selectedServiceIds.length === 0) {
+      setError("Seleziona almeno un servizio per l'appuntamento.");
+      return;
+    }
+
     setSaving(true);
     setError(null);
 
     try {
       const endTime = computeEndTime();
+      let finalNotes = notes || null;
+      if (selectedServiceIds.length > 1) {
+        const extraNames = selectedServiceIds
+          .slice(1)
+          .map((id) => servizi.find((s) => s.id === id)?.name || servizi.find((s) => s.id === id)?.nome)
+          .filter(Boolean);
+        if (extraNames.length > 0) {
+          const extraTag = `[Servizi aggiuntivi: ${extraNames.join(", ")}]`;
+          if (!finalNotes) finalNotes = extraTag;
+          else if (!finalNotes.includes("[Servizi aggiuntivi:")) finalNotes = `${finalNotes} ${extraTag}`;
+        }
+      }
+
       const payload: any = {
         date,
         startTime,
         endTime,
         barberId: barberId || undefined,
-        serviceId: serviceId || undefined,
+        serviceId: selectedServiceIds[0] || serviceId || undefined,
         pricePaid: pricePaid !== "" ? parseFloat(pricePaid) : null,
         status,
-        notes: notes || null,
+        notes: finalNotes,
       };
 
       const res = await fetch(`/api/appointments/${currentAppt.id}`, {
@@ -276,11 +341,17 @@ export default function GestioneModificaModal({
     currentAppt.client?.lastName || currentAppt.cliente?.cognome || "";
   const clientPhone =
     currentAppt.client?.phone || currentAppt.cliente?.telefono || "";
+  const nomiServiziSelezionati = selectedServiceIds
+    .map((id) => servizi.find((s) => s.id === id)?.name || servizi.find((s) => s.id === id)?.nome)
+    .filter(Boolean);
+
   const serviceName =
-    currentAppt.service?.name ||
-    currentAppt.service?.nome ||
-    currentAppt.trattamento?.nome ||
-    "Taglio / Servizio";
+    nomiServiziSelezionati.length > 0
+      ? nomiServiziSelezionati.join(" + ")
+      : (currentAppt.service?.name ||
+         currentAppt.service?.nome ||
+         currentAppt.trattamento?.nome ||
+         "Taglio / Servizio");
   const barberName =
     currentAppt.barber?.name ||
     currentAppt.barber?.nome ||
@@ -447,23 +518,90 @@ export default function GestioneModificaModal({
             </div>
           </div>
 
-          {/* Servizio / Trattamento */}
-          <div>
-            <label className="text-[11px] font-bold uppercase text-slate-400 block mb-1">
-              ✂️ Servizio
-            </label>
-            <select
-              value={serviceId}
-              onChange={(e) => handleServiceChange(e.target.value)}
-              className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500 transition cursor-pointer"
-            >
-              <option value="">Seleziona servizio dal listino...</option>
-              {servizi.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name || s.nome} — €{(s.price ?? s.prezzo ?? 0).toFixed(2)} ({s.durationMinutes || s.durata || 30} min)
-                </option>
-              ))}
-            </select>
+          {/* Sezione Servizi Multipli */}
+          <div className="space-y-2 p-3 bg-slate-950/70 border border-slate-800 rounded-2xl">
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-bold uppercase text-slate-300 block">
+                ✂️ Servizi Prenotati ({selectedServiceIds.length})
+              </label>
+              <span className="text-[10px] text-amber-400 font-medium">
+                Puoi aggiungere più servizi
+              </span>
+            </div>
+
+            {/* Lista servizi associati */}
+            <div className="space-y-1.5">
+              {selectedServiceIds.map((sId, idx) => {
+                const s = servizi.find((item) => item.id === sId);
+                const sName =
+                  s?.name ||
+                  s?.nome ||
+                  (idx === 0
+                    ? (currentAppt.service?.name || currentAppt.service?.nome || "Servizio")
+                    : "Servizio");
+                const sDurata = s?.durationMinutes || s?.durata || 30;
+                const sPrezzo = s?.price ?? s?.prezzo ?? 0;
+
+                return (
+                  <div
+                    key={`${sId}-${idx}`}
+                    className="flex items-center justify-between p-2 rounded-xl bg-slate-900 border border-slate-700/80 text-xs shadow-2xs"
+                  >
+                    <div className="flex items-center gap-2 min-w-0">
+                      <span
+                        className="w-2.5 h-2.5 rounded-full shrink-0"
+                        style={{ backgroundColor: s?.color || s?.colore || "#d97706" }}
+                      />
+                      <span className="font-bold text-white truncate">{sName}</span>
+                      {idx === 0 && selectedServiceIds.length > 1 && (
+                        <span className="text-[9px] bg-amber-500/20 text-amber-300 border border-amber-500/30 font-extrabold px-1.5 py-0.5 rounded-md">
+                          Principale
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[11px] font-semibold text-slate-400">
+                        ⏱️ {sDurata} min
+                      </span>
+                      <span className="text-[11px] font-extrabold text-emerald-400 bg-emerald-950/60 px-2 py-0.5 rounded-lg border border-emerald-500/30">
+                        €{Number(sPrezzo).toFixed(2)}
+                      </span>
+                      {selectedServiceIds.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveService(sId)}
+                          className="text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 p-1 rounded-lg transition cursor-pointer"
+                          title="Rimuovi questo servizio"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Aggiunta di un ulteriore servizio dal listino */}
+            <div className="pt-1">
+              <select
+                value=""
+                onChange={(e) => {
+                  if (e.target.value) handleAddService(e.target.value);
+                }}
+                className="w-full bg-slate-900 border border-dashed border-amber-500/40 hover:border-amber-500/80 rounded-xl px-3 py-2 text-xs text-amber-300 font-bold focus:outline-none focus:border-amber-500 transition cursor-pointer"
+              >
+                <option value="">➕ Clicca per aggiungere un altro servizio dal listino...</option>
+                {servizi
+                  .filter((s) => !selectedServiceIds.includes(s.id))
+                  .map((s) => (
+                    <option key={s.id} value={s.id}>
+                      + {s.name || s.nome} — €{(s.price ?? s.prezzo ?? 0).toFixed(2)} ({s.durationMinutes || s.durata || 30} min)
+                    </option>
+                  ))}
+              </select>
+            </div>
           </div>
 
           {/* Barbiere Assegnato */}
