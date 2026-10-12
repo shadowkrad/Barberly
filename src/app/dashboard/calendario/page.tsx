@@ -1362,75 +1362,80 @@ export default function BarberlyCalendarioPage() {
       {/* Modal Popup Dettaglio Appuntamento */}
       {selected && (
         <div
-          className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4 backdrop-blur-xs"
+          className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-2 sm:p-4 backdrop-blur-xs overflow-y-auto"
           onClick={() => setSelected(null)}
         >
           <div
-            className="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 animate-in fade-in zoom-in duration-200 border border-slate-200"
+            className="bg-white rounded-2xl sm:rounded-3xl shadow-2xl w-full max-w-md max-h-[92vh] sm:max-h-[90vh] flex flex-col my-auto border border-slate-200 animate-in fade-in zoom-in-95 duration-150 overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between mb-4 pb-3 border-b border-slate-100">
-              <div className="flex items-center gap-2">
+            {/* Header Modale Fisso con Chiusura Sempre Cliccabile */}
+            <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-100 shrink-0 bg-white">
+              <div className="flex items-center gap-2 min-w-0">
                 <span
-                  className="w-3.5 h-3.5 rounded-full"
+                  className="w-3.5 h-3.5 rounded-full shrink-0"
                   style={{ backgroundColor: selected.barbiere?.colore || "#d97706" }}
-                  title={`Barbiere: ${selected.barbiere.nome}`}
+                  title={`Barbiere: ${selected.barbiere?.nome || "Non assegnato"}`}
                 />
-                <h2 className="text-base font-bold text-slate-900">Scheda Appuntamento</h2>
+                <h2 className="text-base font-bold text-slate-900 truncate">Scheda Appuntamento</h2>
               </div>
               <button
+                type="button"
                 onClick={() => setSelected(null)}
-                className="text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                className="w-8 h-8 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-500 hover:text-slate-800 flex items-center justify-center transition cursor-pointer shrink-0 font-bold active:scale-95 text-xs"
+                title="Chiudi scheda"
               >
                 ✕
               </button>
             </div>
 
-            {/* Banner Stato */}
-            <div className="mb-3 p-3 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
-                  <span>Stato Attuale:</span>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${STATI_COLORI[selected.stato] || ""}`}>
-                    {STATI_LABEL[selected.stato] || selected.stato}
+            {/* Contenuto Scrollabile Interno */}
+            <div className="overflow-y-auto px-5 py-4 space-y-3.5 flex-1 [scrollbar-width:thin] text-sm">
+              {/* Banner Stato */}
+              <div className="p-2.5 sm:p-3 bg-slate-50 border border-slate-200 rounded-2xl flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                    <span>Stato Attuale:</span>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold border ${STATI_COLORI[selected.stato] || ""}`}>
+                      {STATI_LABEL[selected.stato] || selected.stato}
+                    </span>
                   </span>
-                </span>
-                <span className="text-[11px] text-slate-400">Azioni rapide:</span>
+                  <span className="text-[11px] text-slate-400">Azioni rapide:</span>
+                </div>
+                <div className="grid grid-cols-3 gap-1.5 w-full">
+                  <button
+                    type="button"
+                    onClick={() => aggiornaStato(selected.id, "IN_POLTRONA")}
+                    className="py-1.5 px-2 bg-amber-500 hover:bg-amber-600 active:scale-95 text-slate-950 font-bold text-[11px] rounded-xl transition cursor-pointer flex items-center justify-center gap-1"
+                  >
+                    <span>💈</span>
+                    <span>In Poltrona</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => aggiornaStato(selected.id, "COMPLETATO")}
+                    className="py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-[11px] rounded-xl transition cursor-pointer flex items-center justify-center gap-1"
+                  >
+                    <span>✨</span>
+                    <span>Fatto</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => aggiornaStato(selected.id, "NO_SHOW")}
+                    className="py-1.5 px-2 bg-rose-50 hover:bg-rose-100 active:scale-95 text-rose-700 border border-rose-200 font-bold text-[11px] rounded-xl transition cursor-pointer flex items-center justify-center gap-1"
+                    title="Il cliente non si è presentato"
+                  >
+                    <span>🚫</span>
+                    <span>Assente</span>
+                  </button>
+                </div>
               </div>
-              <div className="grid grid-cols-3 gap-1.5 w-full">
-                <button
-                  type="button"
-                  onClick={() => aggiornaStato(selected.id, "IN_POLTRONA")}
-                  className="py-1.5 px-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-[11px] rounded-xl transition cursor-pointer flex items-center justify-center gap-1"
-                >
-                  <span>💈</span>
-                  <span>In Poltrona</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => aggiornaStato(selected.id, "COMPLETATO")}
-                  className="py-1.5 px-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[11px] rounded-xl transition cursor-pointer flex items-center justify-center gap-1"
-                >
-                  <span>✨</span>
-                  <span>Fatto</span>
-                </button>
-                <button
-                  type="button"
-                  onClick={() => aggiornaStato(selected.id, "NO_SHOW")}
-                  className="py-1.5 px-2 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-bold text-[11px] rounded-xl transition cursor-pointer flex items-center justify-center gap-1"
-                  title="Il cliente non si è presentato"
-                >
-                  <span>🚫</span>
-                  <span>Assente</span>
-                </button>
-              </div>
-            </div>
 
-            <div className="space-y-3 text-sm">
-              <div className="bg-amber-50/40 p-3.5 rounded-2xl border border-amber-200/80 flex items-center justify-between">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <p className="text-xs text-slate-500 uppercase font-semibold">Cliente</p>
+              {/* Scheda Cliente Compatta */}
+              <div className="bg-amber-50/40 p-3 rounded-2xl border border-amber-200/80 flex items-center justify-between">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <p className="text-[11px] text-slate-500 uppercase font-semibold">Cliente</p>
                     {(() => {
                       const b = getCanaleBadge(selected.channel, selected.noteInterne);
                       return (
@@ -1440,11 +1445,11 @@ export default function BarberlyCalendarioPage() {
                       );
                     })()}
                   </div>
-                  <p className="text-base font-bold text-slate-900 mt-0.5">
+                  <p className="text-base font-bold text-slate-900 mt-0.5 truncate">
                     {selected.cliente?.nome || "Cliente"} {selected.cliente?.cognome || ""}
                   </p>
                 </div>
-                <div className="flex items-center gap-1.5">
+                <div className="flex items-center gap-1.5 shrink-0">
                   {selected.cliente?.telefono && (
                     <>
                       <a
@@ -1477,33 +1482,34 @@ export default function BarberlyCalendarioPage() {
                 </div>
               </div>
 
+              {/* Servizio & Barbiere */}
               <div className="grid grid-cols-2 gap-2 text-xs">
                 <div className="p-2.5 border rounded-xl bg-white border-slate-200">
-                  <span className="text-slate-400 block">Servizio</span>
-                  <span className="font-bold text-slate-800 text-sm">
+                  <span className="text-slate-400 block text-[11px]">Servizio</span>
+                  <span className="font-bold text-slate-800 text-xs sm:text-sm line-clamp-2">
                     {selected.servizio?.nome || "Servizio"}
                   </span>
                 </div>
                 <div className="p-2.5 border rounded-xl bg-white border-slate-200">
-                  <span className="text-slate-400 block">Poltrona / Staff</span>
+                  <span className="text-slate-400 block text-[11px]">Poltrona / Staff</span>
                   <div className="flex items-center gap-1.5 mt-0.5">
                     <span
                       className="w-2.5 h-2.5 rounded-full shrink-0"
                       style={{ backgroundColor: selected.barbiere?.colore || "#d97706" }}
                     />
-                    <span className="font-bold text-slate-800 text-sm">
+                    <span className="font-bold text-slate-800 text-xs sm:text-sm truncate">
                       {selected.barbiere?.nome || "Barbiere"}
                     </span>
                   </div>
                 </div>
               </div>
 
-              {/* Riquadro Orario Inizio, Fine e Durata */}
+              {/* Riquadro Orario Inizio, Fine, Durata e Prezzo */}
               {(() => {
                 const inizio = new Date(selected.dataOra);
                 const fine = getOrarioFine(selected.dataOra, selected.durata);
                 return (
-                  <div className="p-3.5 border border-amber-200/80 rounded-2xl bg-amber-50/30 text-xs space-y-2">
+                  <div className="p-3 border border-amber-200/80 rounded-2xl bg-amber-50/30 text-xs space-y-1.5">
                     <div className="flex justify-between items-center">
                       <span className="text-slate-500">Data Seduta:</span>
                       <span className="font-bold text-slate-800 capitalize">
@@ -1523,7 +1529,7 @@ export default function BarberlyCalendarioPage() {
                     <div className="flex justify-between items-center">
                       <span className="text-slate-500">Durata:</span>
                       <span className="font-bold text-amber-700">
-                        {selected.durata} min
+                        {selected.durata} min (fine ore {format(fine, "HH:mm")})
                       </span>
                     </div>
                     {selected.prezzoStimato !== undefined && selected.prezzoStimato !== null && (
@@ -1542,28 +1548,29 @@ export default function BarberlyCalendarioPage() {
                   {selected.note}
                 </div>
               )}
-            </div>
 
-            <div className="mt-4 pt-3 flex flex-col gap-2 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => {
-                  const selToEdit = selected.raw || selected;
-                  setSelected(null);
-                  setModificaModalAppt(selToEdit);
-                }}
-                className="w-full py-2.5 px-4 bg-amber-500 hover:bg-amber-400 active:scale-98 text-slate-950 text-xs font-bold rounded-xl shadow-md shadow-amber-500/20 transition flex items-center justify-center gap-2 cursor-pointer"
-              >
-                <span>✏️</span>
-                <span>Modifica Prenotazione (Data, Ora, Barbiere, Servizio)</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelected(null)}
-                className="w-full py-1.5 text-xs text-slate-500 hover:text-slate-700 font-semibold cursor-pointer text-center"
-              >
-                Chiudi
-              </button>
+              {/* Azione Principale: Modifica Prenotazione */}
+              <div className="pt-2 border-t border-slate-100 flex flex-col gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const selToEdit = selected.raw || selected;
+                    setSelected(null);
+                    setModificaModalAppt(selToEdit);
+                  }}
+                  className="w-full py-2.5 px-4 bg-amber-500 hover:bg-amber-400 active:scale-98 text-slate-950 text-xs font-bold rounded-xl shadow-md shadow-amber-500/20 transition flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  <span>✏️</span>
+                  <span>Modifica Prenotazione (Data, Ora, Barbiere, Servizio)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelected(null)}
+                  className="w-full py-1.5 text-xs text-slate-500 hover:text-slate-700 font-semibold cursor-pointer text-center"
+                >
+                  Chiudi scheda
+                </button>
+              </div>
             </div>
           </div>
         </div>
