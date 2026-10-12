@@ -167,6 +167,7 @@ export async function ensureDatabase(): Promise<void> {
           "whatsappProvider" TEXT DEFAULT 'WA_ME',
           "slotIntervalMinutes" INTEGER DEFAULT 30,
           "cancelHoursNotice" INTEGER DEFAULT 24,
+          "showcaseConfig" TEXT DEFAULT '{}',
           "lastSyncedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
       `);
@@ -223,6 +224,7 @@ export async function ensureDatabase(): Promise<void> {
       await addColumnIfNotExists("TenantLocalCache", "slotIntervalMinutes", "INTEGER DEFAULT 30");
       await addColumnIfNotExists("TenantLocalCache", "cancelHoursNotice", "INTEGER DEFAULT 24");
       await addColumnIfNotExists("TenantLocalCache", "faviconUrl", "TEXT");
+      await addColumnIfNotExists("TenantLocalCache", "showcaseConfig", "TEXT DEFAULT '{}'");
 
       // 3. Verifica e Seeding WorkingHours
       const hoursCount = await prisma.workingHours.count();

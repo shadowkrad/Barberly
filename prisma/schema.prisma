@@ -99,6 +99,7 @@ model TenantLocalCache {
   whatsappProvider    String?  @default("WA_ME")
   slotIntervalMinutes Int      @default(30)
   cancelHoursNotice   Int      @default(24)
+  showcaseConfig      String?  @default("{}")
   lastSyncedAt        DateTime @default(now())
 }
 
