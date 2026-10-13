@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PublicHeader } from "@/components/public/PublicHeader";
 import { PublicFooter } from "@/components/public/PublicFooter";
+import FloatingWhatsAppWidget from "@/components/public/FloatingWhatsAppWidget";
 import { getTenantConfig } from "@/lib/taaaac-core";
 import { prisma, ensureDatabase } from "@/lib/db";
 import { parseShowcaseConfig } from "@/lib/showcase-defaults";
@@ -420,6 +421,12 @@ export default async function PublicHomePage() {
 
       {/* Footer con link discreto per l'esercente */}
       <PublicFooter config={config} />
+
+      {/* Widget Flottante WhatsApp Vetrina */}
+      <FloatingWhatsAppWidget
+        phone={config.contact?.phone}
+        brandName={config.theme.brandName || "Barberly Studio"}
+      />
     </div>
   );
 }
