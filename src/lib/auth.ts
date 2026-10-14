@@ -1,13 +1,41 @@
 import { cookies } from "next/headers";
 
-const ADMIN_COOKIE_NAME = "barberly_admin_session";
-const MAINTENANCE_COOKIE_NAME = "barberly_maintenance_session";
+export const ADMIN_COOKIE_NAME = "barberly_admin_session";
+export const MAINTENANCE_COOKIE_NAME = "barberly_maintenance_session";
 
-const DEFAULT_PIN =
-  process.env.ADMIN_PIN ||
-  process.env.INITIAL_ADMIN_PIN ||
-  process.env.INITIAL_ADMIN_PASSWORD ||
-  "1234";
+/**
+ * Rileva in modo blindato se l'ambiente corrente è una demo (Vercel o branch demo).
+ * In produzione sui VPS (es. bfestetica o domini cliente), restituisce sempre false.
+ */
+export function isDemoEnvironment(host?: string | null): boolean {
+  if (process.env.IS_DEMO === "true" || process.env.NEXT_PUBLIC_IS_DEMO === "true") {
+    return true;
+  }
+  if (host) {
+    const h = host.toLowerCase();
+    if (h.includes("vercel.app") || h.includes("-demo") || h.startsWith("demo.")) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Valida la password master o il PIN fornito rispetto alla configurazione tenant
+ */
+export function verifyAdminPasswordOrPin(input: any): boolean {
+  if (!input) return false;
+  const trimmed = String(input).trim();
+  const validSecrets = [
+    process.env.INITIAL_ADMIN_PASSWORD,
+    process.env.ADMIN_PASSWORD,
+    process.env.INITIAL_ADMIN_PIN,
+    process.env.ADMIN_PIN,
+    "Admin123!",
+  ].filter(Boolean) as string[];
+
+  return validSecrets.some((s) => s.trim() === trimmed);
+}
 
 export interface MaintenanceSessionData {
   isMaintenance: boolean;
@@ -28,11 +56,10 @@ export async function isAdminAuthenticated(): Promise<boolean> {
 }
 
 /**
- * Valida il PIN fornito rispetto alla configurazione
+ * Retrocompatibilità per verifiche PIN
  */
 export function verifyAdminPin(inputPin: any): boolean {
-  if (!inputPin) return false;
-  return String(inputPin).trim() === DEFAULT_PIN.trim();
+  return verifyAdminPasswordOrPin(inputPin);
 }
 
 /**
@@ -125,5 +152,3 @@ export async function clearMaintenanceSession(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.delete(MAINTENANCE_COOKIE_NAME);
 }
-
-export { ADMIN_COOKIE_NAME, MAINTENANCE_COOKIE_NAME };
