@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, ensureDatabase } from "@/lib/db";
 import { isAdminAuthenticated } from "@/lib/auth";
+import { triggerGoogleReviewBooster } from "@/lib/omnichannel-client";
 
 export async function GET(
   _req: NextRequest,
@@ -68,6 +69,14 @@ export async function PUT(
         service: true,
       },
     });
+
+    if (status === "COMPLETED" && updated.client?.email) {
+      triggerGoogleReviewBooster({
+        clientEmail: updated.client.email,
+        clientName: `${updated.client.firstName} ${updated.client.lastName}`.trim(),
+        serviceName: updated.service?.name,
+      }).catch((err) => console.error("[Barberly ReviewBooster Trigger Error]:", err));
+    }
 
     return NextResponse.json(updated);
   } catch (error) {

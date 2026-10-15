@@ -1,17 +1,29 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Clock, Save, Copy, Check, AlertCircle, Calendar } from "lucide-react";
+import {
+  Clock,
+  Save,
+  Copy,
+  Check,
+  AlertCircle,
+  Globe,
+  Share2,
+  MessageCircle,
+  Star,
+  RefreshCw,
+  Sparkles,
+} from "lucide-react";
 
 const GIORNI_SETTIMANA = [
-  { nome: "Lunedì", giorno: 1 },
-  { nome: "Martedì", giorno: 2 },
-  { nome: "Mercoledì", giorno: 3 },
-  { nome: "Giovedì", giorno: 4 },
-  { nome: "Venerdì", giorno: 5 },
-  { nome: "Sabato", giorno: 6 },
-  { nome: "Domenica", giorno: 0 },
-];
+  { nome: "Lunedì", giorno: 1, key: "MONDAY" },
+  { nome: "Martedì", giorno: 2, key: "TUESDAY" },
+  { nome: "Mercoledì", giorno: 3, key: "WEDNESDAY" },
+  { nome: "Giovedì", giorno: 4, key: "THURSDAY" },
+  { nome: "Venerdì", giorno: 5, key: "FRIDAY" },
+  { nome: "Sabato", giorno: 6, key: "SATURDAY" },
+  { nome: "Domenica", giorno: 0, key: "SUNDAY" },
+] as const;
 
 interface Disponibilita {
   id?: string;
@@ -23,16 +35,31 @@ interface Disponibilita {
   attivo: boolean;
 }
 
+interface ChannelStatus {
+  ok: boolean;
+  channels?: {
+    google?: { enabled: boolean; status: string; lastSyncAt?: string | null };
+    meta?: { enabled: boolean; status: string; lastSyncAt?: string | null };
+    whatsapp?: { enabled: boolean; displayNumber?: string | null };
+    reviewBooster?: { enabled: boolean; totalSent: number; googleUrl?: string | null };
+  };
+  lastOmnichannelSyncAt?: string | null;
+}
+
 export default function BarberlyOrariPage() {
   const [orari, setOrari] = useState<Disponibilita[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [channelStatus, setChannelStatus] = useState<ChannelStatus | null>(null);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   useEffect(() => {
-    fetch("/api/orari")
-      .then((r) => r.json())
-      .then((data: Disponibilita[]) => {
+    Promise.all([
+      fetch("/api/orari").then((r) => r.json()),
+      fetch("/api/sync/channels").then((r) => r.json()).catch(() => null),
+    ])
+      .then(([data, channels]) => {
         const completo = Array.from({ length: 7 }, (_, i) => {
           const trovato = Array.isArray(data) ? data.find((d) => d.giorno === i) : null;
           return (
@@ -47,6 +74,7 @@ export default function BarberlyOrariPage() {
           );
         });
         setOrari(completo);
+        if (channels) setChannelStatus(channels);
         setLoading(false);
       })
       .catch((err) => {
@@ -86,10 +114,13 @@ export default function BarberlyOrariPage() {
     });
   };
 
-  const handleSaveAll = async () => {
-    setSaving(true);
+  const handleSaveAll = async (andSync: boolean = false) => {
+    if (andSync) setSyncing(true);
+    else setSaving(true);
     setFeedback(null);
+
     try {
+      // 1. Salva nel database locale di Barberly
       const res = await fetch("/api/orari", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
@@ -99,11 +130,60 @@ export default function BarberlyOrariPage() {
       if (!res.ok || data.error) {
         throw new Error(data.error || "Impossibile salvare gli orari");
       }
-      setFeedback({ type: "success", text: "Orari settimanali del salone salvati con successo!" });
+
+      // 2. Se richiesto, invia la sincronizzazione a Google Maps, Meta e WhatsApp tramite Core
+      if (andSync) {
+        const weeklyHours = GIORNI_SETTIMANA.map(({ giorno, key }) => {
+          const item = orari.find((o) => o.giorno === giorno);
+          if (!item || !item.attivo) {
+            return { dayOfWeek: key, isOpen: false, slots: [] };
+          }
+          const slots = [];
+          if (item.pausaInizio && item.pausaFine) {
+            slots.push({ open: item.oraInizio, close: item.pausaInizio });
+            slots.push({ open: item.pausaFine, close: item.oraFine });
+          } else {
+            slots.push({ open: item.oraInizio, close: item.oraFine });
+          }
+          return {
+            dayOfWeek: key,
+            isOpen: true,
+            slots,
+          };
+        });
+
+        const syncRes = await fetch("/api/sync/channels", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ weeklyHours }),
+        });
+        const syncData = await syncRes.json();
+
+        if (!syncRes.ok || !syncData.ok) {
+          throw new Error(syncData.error || "Errore sincronizzazione con i canali esterni");
+        }
+
+        setFeedback({
+          type: "success",
+          text: "🚀 Orari salvati e sincronizzati all'unisono su Google Maps, Meta e WhatsApp!",
+        });
+
+        // Ricarica stato canali
+        fetch("/api/sync/channels")
+          .then((r) => r.json())
+          .then((st) => setChannelStatus(st))
+          .catch(() => {});
+      } else {
+        setFeedback({
+          type: "success",
+          text: "Orari settimanali del salone salvati con successo nel database locale!",
+        });
+      }
     } catch (err: any) {
       setFeedback({ type: "error", text: err.message || "Errore durante il salvataggio" });
     } finally {
       setSaving(false);
+      setSyncing(false);
     }
   };
 
@@ -141,18 +221,114 @@ export default function BarberlyOrariPage() {
             <Copy className="w-3.5 h-3.5 text-amber-400" />
             Copia Lunedì su Mar-Sab
           </button>
+
           <button
-            onClick={handleSaveAll}
-            disabled={saving}
-            className="inline-flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold rounded-xl text-xs shadow-md transition disabled:opacity-50 cursor-pointer"
+            onClick={() => handleSaveAll(false)}
+            disabled={saving || syncing}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-xl text-xs border border-slate-700 transition disabled:opacity-50 cursor-pointer"
           >
             {saving ? (
-              <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-slate-200 border-t-transparent rounded-full animate-spin" />
             ) : (
               <Save className="w-4 h-4" />
             )}
-            Salva Orari
+            Salva Locale
           </button>
+
+          <button
+            onClick={() => handleSaveAll(true)}
+            disabled={saving || syncing}
+            className="inline-flex items-center gap-2 px-5 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-bold rounded-xl text-xs shadow-md transition disabled:opacity-50 cursor-pointer"
+          >
+            {syncing ? (
+              <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+            ) : (
+              <Sparkles className="w-4 h-4" />
+            )}
+            🚀 Salva e Sincronizza su Google & Canali
+          </button>
+        </div>
+      </div>
+
+      {/* Hub Sincronizzazione Omnicanale */}
+      <div className="bg-gradient-to-br from-slate-900 to-slate-950 border border-amber-500/30 rounded-2xl p-4 shadow-lg">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pb-3 border-b border-slate-800">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400">
+              <RefreshCw className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                Hub Sincronizzazione Omnicanale
+                <span className="text-[10px] uppercase tracking-wider bg-amber-500/20 text-amber-300 font-black px-2 py-0.5 rounded-full border border-amber-500/30">
+                  v1.1.0 All'Unisono
+                </span>
+              </h3>
+              <p className="text-xs text-slate-400">
+                Un solo click aggiorna automaticamente la bottega su Google Maps, Meta (Facebook & IG) e WhatsApp Business.
+              </p>
+            </div>
+          </div>
+          {channelStatus?.lastOmnichannelSyncAt && (
+            <div className="text-[11px] text-slate-400">
+              Ultima sinc: <span className="text-slate-200 font-mono">{new Date(channelStatus.lastOmnichannelSyncAt).toLocaleString("it-IT")}</span>
+            </div>
+          )}
+        </div>
+
+        {/* Canali Connessi */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-3">
+          <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80 flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center text-blue-400">
+              <Globe className="w-3.5 h-3.5" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-semibold text-white truncate">Google Maps</div>
+              <div className="text-[10px] text-slate-400 truncate flex items-center gap-1">
+                <span className={`w-1.5 h-1.5 rounded-full ${channelStatus?.channels?.google?.enabled ? "bg-emerald-400" : "bg-amber-400"}`} />
+                {channelStatus?.channels?.google?.enabled ? "Collegato" : "Pronto (Core)"}
+              </div>
+            </div>
+          </div>
+
+          <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80 flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+              <Share2 className="w-3.5 h-3.5" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-semibold text-white truncate">Facebook & IG</div>
+              <div className="text-[10px] text-slate-400 truncate flex items-center gap-1">
+                <span className={`w-1.5 h-1.5 rounded-full ${channelStatus?.channels?.meta?.enabled ? "bg-emerald-400" : "bg-amber-400"}`} />
+                {channelStatus?.channels?.meta?.enabled ? "Collegato" : "Pronto (Core)"}
+              </div>
+            </div>
+          </div>
+
+          <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80 flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+              <MessageCircle className="w-3.5 h-3.5" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-semibold text-white truncate">WhatsApp</div>
+              <div className="text-[10px] text-slate-400 truncate flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                Attivo 1-Click
+              </div>
+            </div>
+          </div>
+
+          <div className="p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80 flex items-center gap-2.5">
+            <div className="w-7 h-7 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
+              <Star className="w-3.5 h-3.5" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-semibold text-white truncate">Review Booster</div>
+              <div className="text-[10px] text-slate-400 truncate flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                Email 5 Stelle
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
