@@ -101,6 +101,13 @@ model TenantLocalCache {
   cancelHoursNotice   Int      @default(24)
   showcaseConfig      String?  @default("{}")
   lastSyncedAt        DateTime @default(now())
+  // 🛡️ Sicurezza v1.0.6: 2FA / MFA, Brute Force & Audit
+  mfaEnabled          Boolean   @default(false)
+  mfaSecret           String?
+  mfaBackupCodes      String?
+  failedLoginAttempts Int       @default(0)
+  lockedUntil         DateTime?
+  tokenVersion        Int       @default(1)
 }
 
 // Dispositivi PWA FIDO2 / Biometrici autorizzati per avvio rapido con PIN/Impronta
@@ -130,4 +137,32 @@ model WebAuthnChallenge {
   createdAt DateTime @default(now())
 
   @@index([expiresAt])
+}
+
+
+model TrustedDevice {
+  id          String    @id @default(cuid())
+  deviceHash  String    @unique
+  deviceName  String
+  deviceType  String    @default("desktop")
+  browser     String?
+  os          String?
+  ipAddress   String?
+  firstSeenAt DateTime  @default(now())
+  lastSeenAt  DateTime  @default(now())
+}
+
+model AccessLog {
+  id          String    @id @default(cuid())
+  esito       String
+  ipAddress   String
+  userAgent   String?
+  deviceType  String    @default("desktop")
+  browser     String?
+  os          String?
+  mfaUsed     Boolean   @default(false)
+  dettaglio   String?
+  createdAt   DateTime  @default(now())
+
+  @@index([createdAt])
 }
