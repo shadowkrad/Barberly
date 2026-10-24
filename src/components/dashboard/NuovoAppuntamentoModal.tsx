@@ -1,7 +1,16 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Scissors, Clock, Calendar, Users, Phone, Mail, Plus, X, Check } from "lucide-react";
+
+interface OrarioGiorno {
+  giorno: number;
+  oraInizio: string;
+  oraFine: string;
+  pausaInizio?: string | null;
+  pausaFine?: string | null;
+  attivo: boolean;
+}
 
 interface Barber {
   id: string;
@@ -72,18 +81,103 @@ export default function NuovoAppuntamentoModal({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Orari di apertura e gestione eccezione fuori orario
+  const [workingHours, setWorkingHours] = useState<OrarioGiorno[]>([]);
+  const [confermaFuoriOrarioRichiesta, setConfermaFuoriOrarioRichiesta] = useState(false);
+  const [confermaFuoriOrarioAccettata, setConfermaFuoriOrarioAccettata] = useState(false);
+
+  const selectedService = servizi.find((s) => s.id === selectedServiceId) || servizi[0] || null;
+
+  const calculatedEndTime = useMemo(() => {
+    if (!startTime) return "";
+    const [h, m] = startTime.split(":").map(Number);
+    if (isNaN(h) || isNaN(m)) return "";
+    const duration = selectedService?.durationMinutes || 30;
+    const totalMin = h * 60 + m + duration;
+    const eh = Math.floor(totalMin / 60) % 24;
+    const em = totalMin % 60;
+    return `${String(eh).padStart(2, "0")}:${String(em).padStart(2, "0")}`;
+  }, [startTime, selectedService]);
+
+  const infoFuoriOrario = useMemo(() => {
+    if (!date || !startTime || workingHours.length === 0) return null;
+    try {
+      const [y, m, d] = date.split("-").map(Number);
+      if (!y || !m || !d) return null;
+      const dayOfWeek = new Date(y, m - 1, d).getDay(); // 0 = Dom, 1 = Lun, etc.
+      const wh = workingHours.find((w) => w.giorno === dayOfWeek);
+
+      const endTime = calculatedEndTime;
+
+      // 1. Giorno chiuso
+      if (!wh || !wh.attivo) {
+        return {
+          tipo: "GIORNO_CHIUSO",
+          titolo: "Giorno di Chiusura",
+          motivo: "La barberia risulta chiusa nella giornata selezionata (es. Domenica o riposo settimanale).",
+          orarioRichiesto: `${startTime} – ${endTime}`,
+          orarioApertura: "Chiuso",
+        };
+      }
+
+      // 2. Prima dell'apertura
+      if (wh.oraInizio && startTime < wh.oraInizio) {
+        return {
+          tipo: "PRIMA_APERTURA",
+          titolo: "Orario Precedente all'Apertura",
+          motivo: `L'orario di inizio (${startTime}) precede l'apertura stabilita delle ${wh.oraInizio}.`,
+          orarioRichiesto: `${startTime} – ${endTime}`,
+          orarioApertura: `Apertura ore ${wh.oraInizio} — Chiusura ore ${wh.oraFine}`,
+        };
+      }
+
+      // 3. Dopo la chiusura
+      if (wh.oraFine && endTime > wh.oraFine) {
+        return {
+          tipo: "DOPO_CHIUSURA",
+          titolo: "Orario Oltre l'Orario di Chiusura",
+          motivo: `La conclusione del servizio (${endTime}) supera l'orario di chiusura stabilito delle ${wh.oraFine}.`,
+          orarioRichiesto: `${startTime} – ${endTime}`,
+          orarioApertura: `Apertura ore ${wh.oraInizio} — Chiusura ore ${wh.oraFine}`,
+        };
+      }
+
+      // 4. Pausa pranzo
+      if (wh.pausaInizio && wh.pausaFine) {
+        const sovrapponePausa = startTime < wh.pausaFine && endTime > wh.pausaInizio;
+        if (sovrapponePausa) {
+          return {
+            tipo: "DURANTE_PAUSA",
+            titolo: "Appuntamento Durante la Pausa",
+            motivo: `L'appuntamento (${startTime} – ${endTime}) ricade durante l'intervallo di pausa (${wh.pausaInizio} – ${wh.pausaFine}).`,
+            orarioRichiesto: `${startTime} – ${endTime}`,
+            orarioApertura: `Pausa: ${wh.pausaInizio} – ${wh.pausaFine}`,
+          };
+        }
+      }
+
+      return null;
+    } catch {
+      return null;
+    }
+  }, [date, startTime, calculatedEndTime, workingHours]);
+
   useEffect(() => {
     if (isOpen) {
       if (initialBarberId) setSelectedBarberId(initialBarberId);
       if (initialDate) setDate(initialDate);
       if (initialTime) setStartTime(initialTime);
 
+      setConfermaFuoriOrarioRichiesta(false);
+      setConfermaFuoriOrarioAccettata(false);
+
       Promise.all([
         fetch("/api/barbieri").then((r) => r.json()),
         fetch("/api/listino").then((r) => r.json()),
         fetch("/api/clienti?limit=50").then((r) => r.json()),
+        fetch("/api/orari").then((r) => r.json()).catch(() => []),
       ])
-        .then(([barbData, listData, clientData]) => {
+        .then(([barbData, listData, clientData, whData]) => {
           const bList = (barbData.barbieri || []).map((b: any) => ({
             id: b.id,
             name: b.nome,
@@ -115,6 +209,9 @@ export default function NuovoAppuntamentoModal({
             email: c.email,
           }));
           setClienti(cList);
+          if (Array.isArray(whData)) {
+            setWorkingHours(whData);
+          }
         })
         .catch((err) => console.error("Errore fetch modale:", err));
     }
@@ -129,11 +226,17 @@ export default function NuovoAppuntamentoModal({
       c.phone.includes(clientSearch)
   );
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setSaving(true);
+  const handleSubmit = async (e?: React.FormEvent, forceFuoriOrario = false) => {
+    if (e) e.preventDefault();
     setError(null);
 
+    // Se l'orario ricade fuori dall'apertura o in chiusura e non è confermata l'eccezione
+    if (infoFuoriOrario && !forceFuoriOrario && !confermaFuoriOrarioAccettata) {
+      setConfermaFuoriOrarioRichiesta(true);
+      return;
+    }
+
+    setSaving(true);
     try {
       const payload: any = {
         barberId: selectedBarberId,
@@ -188,6 +291,75 @@ export default function NuovoAppuntamentoModal({
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* Banner Conferma Appuntamento Fuori Orario / Chiusura */}
+        {confermaFuoriOrarioRichiesta && infoFuoriOrario && (
+          <div className="p-4 bg-amber-500/10 border-2 border-amber-500 rounded-2xl text-amber-200 space-y-3 shadow-xl animate-in fade-in zoom-in-95">
+            <div className="flex items-start gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-amber-500 text-slate-950 flex items-center justify-center text-xl shrink-0 font-bold shadow-md">
+                ⚠️
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="px-2 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider bg-amber-500/20 text-amber-400 border border-amber-500/30">
+                    Controllo Orari Barberia
+                  </span>
+                  <h4 className="text-sm font-bold text-amber-300">
+                    {infoFuoriOrario.titolo}
+                  </h4>
+                </div>
+                <p className="text-xs text-slate-300 leading-relaxed">
+                  {infoFuoriOrario.motivo}
+                </p>
+                <div className="p-2.5 bg-slate-950/60 border border-slate-800 rounded-xl text-xs space-y-1 mt-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400 font-medium">Orario richiesto:</span>
+                    <strong className="text-amber-400 font-bold">{infoFuoriOrario.orarioRichiesto}</strong>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-400 font-medium">Orario ufficiale:</span>
+                    <strong className="text-slate-200 font-semibold">{infoFuoriOrario.orarioApertura}</strong>
+                  </div>
+                </div>
+                <p className="text-xs text-amber-300 pt-1 font-semibold">
+                  Stai effettuando questo appuntamento di proposito come eccezione concordata con il cliente, oppure si tratta di un errore di inserimento?
+                </p>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-amber-500/20">
+              <button
+                type="button"
+                onClick={() => {
+                  setConfermaFuoriOrarioAccettata(true);
+                  setConfermaFuoriOrarioRichiesta(false);
+                  handleSubmit(undefined, true);
+                }}
+                disabled={saving}
+                className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 text-slate-950 rounded-xl text-xs font-bold shadow-md transition flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              >
+                {saving ? (
+                  <>
+                    <span className="w-3.5 h-3.5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                    <span>Salvataggio in corso...</span>
+                  </>
+                ) : (
+                  <>
+                    <span>✓</span>
+                    <span>Conferma Eccezione Fuori Orario</span>
+                  </>
+                )}
+              </button>
+              <button
+                type="button"
+                onClick={() => setConfermaFuoriOrarioRichiesta(false)}
+                className="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition cursor-pointer"
+              >
+                ✕ Annulla e Correggi Orario
+              </button>
+            </div>
+          </div>
+        )}
 
         {error && (
           <div className="p-3 bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-semibold rounded-xl">
