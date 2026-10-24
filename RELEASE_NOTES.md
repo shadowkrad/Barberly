@@ -40,6 +40,13 @@
 - **Blocco Temporaneo Automatico**: Protezione attiva contro tentativi di indovinare la password; dopo 5 tentativi consecutivi errati dall'IP o sull'account, l'accesso viene sospeso per 15 minuti con timer di sblocco in tempo reale.
 - **Honey-Pot Silenzioso**: Campo esca invisibile nel modulo di login che respinge all'istante bot automatizzati prima dell'elaborazione.
 
+### 5. ⏰ Alert di Conferma per Appuntamenti Manuali Fuori Orario o in Giorni di Chiusura
+- **Prevenzione Errori di Digitazione**: Quando il gestore inserisce un appuntamento in poltrona con orario antecedente all'apertura, successivo all'orario di chiusura, ricadente nella pausa pranzo o in un giorno di riposo/chiusura della barberia, l'interfaccia apre un avviso di sicurezza dedicato.
+- **Supporto Deroghe ed Eccezioni Volute**: L'avviso chiede chiaramente se si tratta di un'eccezione concordata con il cliente o di una svista. Con un clic è possibile confermare l'eccezione e salvare la prenotazione, oppure annullare per correggere l'orario senza errori.
+
+### 6. 📅 Invio Report Mattutino Esclusivamente nei Giorni Lavorativi
+- **Filtro Intelligente Giorni di Chiusura**: Il dispatcher automatico del report giornaliero delle prenotazioni verifica gli orari della barberia (WorkingHours): nei giorni di chiusura (es. Domenica o giorni di riposo settimanale), l'invio dell'email viene automaticamente sospeso, evitando notifiche inutili a serrande abbassate.
+
 ---
 
 ## Novità della Versione 1.0.5 (Hotfix Produzione)
