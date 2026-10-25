@@ -168,6 +168,7 @@ export async function ensureDatabase(): Promise<void> {
           "slotIntervalMinutes" INTEGER DEFAULT 30,
           "cancelHoursNotice" INTEGER DEFAULT 24,
           "showcaseConfig" TEXT DEFAULT '{}',
+          "rispettaFestivitaNazionali" BOOLEAN NOT NULL DEFAULT 1,
           "lastSyncedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
       `);
@@ -185,6 +186,23 @@ export async function ensureDatabase(): Promise<void> {
           "lastUsedAt" DATETIME,
           "lastIp" TEXT,
           "userAgent" TEXT,
+          "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        );
+      `);
+
+      await prisma.$executeRawUnsafe(`
+        CREATE TABLE IF NOT EXISTS "EccezioneCalendario" (
+          "id" TEXT NOT NULL PRIMARY KEY,
+          "data" TEXT NOT NULL UNIQUE,
+          "titolo" TEXT NOT NULL,
+          "tipo" TEXT NOT NULL DEFAULT 'CHIUSURA',
+          "isAperto" BOOLEAN NOT NULL DEFAULT 0,
+          "orarioApertura" TEXT,
+          "orarioChiusura" TEXT,
+          "pausaInizio" TEXT,
+          "pausaFine" TEXT,
+          "note" TEXT,
           "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
           "updatedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
         );
@@ -225,6 +243,7 @@ export async function ensureDatabase(): Promise<void> {
       await addColumnIfNotExists("TenantLocalCache", "cancelHoursNotice", "INTEGER DEFAULT 24");
       await addColumnIfNotExists("TenantLocalCache", "faviconUrl", "TEXT");
       await addColumnIfNotExists("TenantLocalCache", "showcaseConfig", "TEXT DEFAULT '{}'");
+      await addColumnIfNotExists("TenantLocalCache", "rispettaFestivitaNazionali", "BOOLEAN NOT NULL DEFAULT 1");
 
       // 3. Verifica e Seeding WorkingHours
       const hoursCount = await prisma.workingHours.count();

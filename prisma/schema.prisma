@@ -98,6 +98,7 @@ model TenantLocalCache {
   whatsappNumber      String?  @default("+39 340 123 4567")
   whatsappProvider    String?  @default("WA_ME")
   slotIntervalMinutes Int      @default(30)
+  rispettaFestivitaNazionali Boolean @default(true)
   cancelHoursNotice   Int      @default(24)
   showcaseConfig      String?  @default("{}")
   lastSyncedAt        DateTime @default(now())
@@ -165,4 +166,18 @@ model AccessLog {
   createdAt   DateTime  @default(now())
 
   @@index([createdAt])
+}
+
+model EccezioneCalendario {
+  id          String   @id @default(cuid())
+  data        String   @unique // Formato "YYYY-MM-DD"
+  tipo        String   @default("CHIUSURA") // CHIUSURA, APERTURA_STRAORDINARIA, ORARIO_SPECIALE
+  titolo      String   // es. "Natale", "Vigilia di Natale", "Apertura Feste"
+  oraInizio   String?  // es. "09:00"
+  oraFine     String?  // es. "19:00"
+  pausaInizio String?  // es. "13:00"
+  pausaFine   String?  // es. "14:00"
+  note        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

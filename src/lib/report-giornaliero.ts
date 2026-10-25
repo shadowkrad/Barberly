@@ -1,3 +1,4 @@
+import { risolviStatoGiornoBarberly } from "@/lib/festivita-italiane";
 import { prisma, ensureDatabase } from "@/lib/db";
 import { sendNotificationMail } from "@/lib/taaaac-mailer";
 import { format } from "date-fns";
@@ -30,24 +31,18 @@ export async function eseguiInvioReportGiornaliero(options?: { isForcedManual?: 
     };
   }
 
-  // 2. Verifica giorno lavorativo / orario di apertura impostato nell'attività
+  // 2. Verifica giorno lavorativo / festività italiane / aperture straordinarie
   const now = new Date();
-  const dayOfWeek = now.getDay(); // 0 = Domenica, 1 = Lunedì, ..., 6 = Sabato
+  const dateStr = format(now, "yyyy-MM-dd");
+  const statoGiorno = await risolviStatoGiornoBarberly(dateStr);
 
-  const wh = await prisma.workingHours.findUnique({
-    where: { dayOfWeek },
-  });
-
-  // Se non configurato esplicitamente, default lavorativo Lun-Sab (1..6)
-  const isGiornoLavorativo = wh ? wh.isOpen : dayOfWeek >= 1 && dayOfWeek <= 6;
-
-  if (!isGiornoLavorativo && !isForcedManual) {
-    const nomeGiorno = format(now, "EEEE", { locale: it });
+  if (!statoGiorno.isLavorativo && !isForcedManual) {
     return {
       success: true,
       skipped: true,
       giornoNonLavorativo: true,
-      message: `Report giornaliero saltato: ${nomeGiorno} è impostato come giorno non lavorativo/chiusura.`,
+      stato: statoGiorno.stato,
+      message: "Report giornaliero saltato: " + (statoGiorno.motivo || statoGiorno.titolo) + ".",
     };
   }
 

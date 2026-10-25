@@ -27,6 +27,13 @@
 ### 6. 📅 Invio Report Mattutino Esclusivamente nei Giorni Lavorativi
 - **Filtro Intelligente Giorni di Chiusura**: Il dispatcher automatico del report giornaliero delle prenotazioni verifica gli orari della barberia (WorkingHours): nei giorni di chiusura (es. Domenica o giorni di riposo settimanale), l'invio dell'email viene automaticamente sospeso, evitando notifiche inutili a serrande abbassate.
 
+### 7. 🎄 Motore Festività Nazionali, Chiusure per Ferie & Aperture Straordinarie
+- **Riconoscimento Festività Italiane**: Il sistema include il calendario delle festività civili e religiose (Natale, Santo Stefano, Capodanno, Befana, Pasqua, Pasquetta, 25 Aprile, 1 Maggio, 2 Giugno, Ferragosto, Ognissanti, 8 Dicembre), con switch rapido in *Dashboard > Orari*.
+- **Aperture Straordinarie (es. Domeniche Natalizie)**: Possibilità di programmare date speciali con orari dedicati (es. Domenica aperta dalle 09:00 alle 19:00 per il grooming pre-feste) oppure orari speciali per vigilie (orario continuato 08:30–16:30).
+- **Integrazione Totale Agenda & Report**:
+  - Le aperture straordinarie aprono istantaneamente le poltrone prenotabili online e consentono la generazione del report mattutino anche nei giorni ordinariamente festivi.
+  - Nei giorni festivi di chiusura, il report automatico viene silenziosamente sospeso e le prenotazioni online vengono bloccate con l'indicazione della festività.
+
 ---
 
 ## Novità della Versione 1.0.5 (Hotfix Produzione)

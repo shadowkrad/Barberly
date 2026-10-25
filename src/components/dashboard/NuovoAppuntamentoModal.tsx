@@ -86,6 +86,11 @@ export default function NuovoAppuntamentoModal({
   const [confermaFuoriOrarioRichiesta, setConfermaFuoriOrarioRichiesta] = useState(false);
   const [confermaFuoriOrarioAccettata, setConfermaFuoriOrarioAccettata] = useState(false);
 
+  // Calendario eccezioni & festività
+  const [eccezioniCalendario, setEccezioniCalendario] = useState<any[]>([]);
+  const [festivitaNazionali, setFestivitaNazionali] = useState<any[]>([]);
+  const [rispettaFestivita, setRispettaFestivita] = useState(true);
+
   const selectedService = servizi.find((s) => s.id === selectedServiceId) || servizi[0] || null;
 
   const calculatedEndTime = useMemo(() => {
@@ -102,14 +107,79 @@ export default function NuovoAppuntamentoModal({
   const infoFuoriOrario = useMemo(() => {
     if (!date || !startTime || workingHours.length === 0) return null;
     try {
-      const [y, m, d] = date.split("-").map(Number);
+      const cleanDate = date.slice(0, 10);
+      const [y, m, d] = cleanDate.split("-").map(Number);
       if (!y || !m || !d) return null;
       const dayOfWeek = new Date(y, m - 1, d).getDay(); // 0 = Dom, 1 = Lun, etc.
-      const wh = workingHours.find((w) => w.giorno === dayOfWeek);
-
       const endTime = calculatedEndTime;
 
-      // 1. Giorno chiuso
+      // LIVELLO 1: Controllo EccezioneCalendario (Apertura Straordinaria / Chiusura Ferie)
+      const ecc = eccezioniCalendario.find((e) => e.data === cleanDate);
+      if (ecc) {
+        if (ecc.tipo === "CHIUSURA") {
+          return {
+            tipo: "CHIUSURA_SPECIALE",
+            titolo: `Chiuso per ${ecc.titolo}`,
+            motivo: ecc.note || `La barberia ha programmato una chiusura speciale (${ecc.titolo}).`,
+            orarioRichiesto: `${startTime} – ${endTime}`,
+            orarioApertura: "Chiuso per ferie/chiusura speciale",
+          };
+        }
+        if (ecc.tipo === "APERTURA_STRAORDINARIA" || ecc.tipo === "ORARIO_SPECIALE") {
+          const sInizio = ecc.oraInizio || "09:00";
+          const sFine = ecc.oraFine || "19:30";
+
+          if (startTime < sInizio) {
+            return {
+              tipo: "PRIMA_APERTURA_SPECIALE",
+              titolo: "Prima dell'Apertura Straordinaria",
+              motivo: `L'orario di inizio (${startTime}) precede l'apertura straordinaria per ${ecc.titolo} (${sInizio}).`,
+              orarioRichiesto: `${startTime} – ${endTime}`,
+              orarioApertura: `Apertura speciale ore ${sInizio} — Chiusura ore ${sFine}`,
+            };
+          }
+          if (endTime > sFine) {
+            return {
+              tipo: "DOPO_CHIUSURA_SPECIALE",
+              titolo: "Oltre l'Orario Speciale",
+              motivo: `La conclusione del servizio (${endTime}) supera l'orario speciale per ${ecc.titolo} (${sFine}).`,
+              orarioRichiesto: `${startTime} – ${endTime}`,
+              orarioApertura: `Apertura speciale ore ${sInizio} — Chiusura ore ${sFine}`,
+            };
+          }
+          if (ecc.pausaInizio && ecc.pausaFine) {
+            if (startTime < ecc.pausaFine && endTime > ecc.pausaInizio) {
+              return {
+                tipo: "DURANTE_PAUSA_SPECIALE",
+                titolo: "Pausa Orario Speciale",
+                motivo: `L'appuntamento (${startTime} – ${endTime}) ricade nella pausa stabilita (${ecc.pausaInizio} – ${ecc.pausaFine}).`,
+                orarioRichiesto: `${startTime} – ${endTime}`,
+                orarioApertura: `Pausa: ${ecc.pausaInizio} – ${ecc.pausaFine}`,
+              };
+            }
+          }
+          // È un'apertura straordinaria confermata
+          return null;
+        }
+      }
+
+      // LIVELLO 2: Controllo Festività Nazionale Italiana
+      if (rispettaFestivita) {
+        const fest = festivitaNazionali.find((f) => f.data === cleanDate);
+        if (fest) {
+          return {
+            tipo: "FESTIVITA_NAZIONALE",
+            titolo: `Chiuso per ${fest.nome}`,
+            motivo: `La giornata selezionata coincide con una festività nazionale italiana (${fest.nome}).`,
+            orarioRichiesto: `${startTime} – ${endTime}`,
+            orarioApertura: "Chiuso per festività nazionale",
+          };
+        }
+      }
+
+      // LIVELLO 3: Controllo orario settimanale ordinario (WorkingHours)
+      const wh = workingHours.find((w) => w.giorno === dayOfWeek);
+
       if (!wh || !wh.attivo) {
         return {
           tipo: "GIORNO_CHIUSO",
@@ -120,7 +190,6 @@ export default function NuovoAppuntamentoModal({
         };
       }
 
-      // 2. Prima dell'apertura
       if (wh.oraInizio && startTime < wh.oraInizio) {
         return {
           tipo: "PRIMA_APERTURA",
@@ -131,7 +200,6 @@ export default function NuovoAppuntamentoModal({
         };
       }
 
-      // 3. Dopo la chiusura
       if (wh.oraFine && endTime > wh.oraFine) {
         return {
           tipo: "DOPO_CHIUSURA",
@@ -142,7 +210,6 @@ export default function NuovoAppuntamentoModal({
         };
       }
 
-      // 4. Pausa pranzo
       if (wh.pausaInizio && wh.pausaFine) {
         const sovrapponePausa = startTime < wh.pausaFine && endTime > wh.pausaInizio;
         if (sovrapponePausa) {
@@ -160,7 +227,7 @@ export default function NuovoAppuntamentoModal({
     } catch {
       return null;
     }
-  }, [date, startTime, calculatedEndTime, workingHours]);
+  }, [date, startTime, calculatedEndTime, workingHours, eccezioniCalendario, festivitaNazionali, rispettaFestivita]);
 
   useEffect(() => {
     if (isOpen) {
@@ -176,8 +243,14 @@ export default function NuovoAppuntamentoModal({
         fetch("/api/listino").then((r) => r.json()),
         fetch("/api/clienti?limit=50").then((r) => r.json()),
         fetch("/api/orari").then((r) => r.json()).catch(() => []),
+        fetch("/api/calendario-eccezioni").then((r) => r.json()).catch(() => null),
       ])
-        .then(([barbData, listData, clientData, whData]) => {
+        .then(([barbData, listData, clientData, whData, calData]) => {
+          if (calData) {
+            setEccezioniCalendario(calData.eccezioni || []);
+            setFestivitaNazionali(calData.festivitaNazionali || []);
+            setRispettaFestivita(calData.rispettaFestivitaNazionali ?? true);
+          }
           const bList = (barbData.barbieri || []).map((b: any) => ({
             id: b.id,
             name: b.nome,

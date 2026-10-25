@@ -1,3 +1,4 @@
+import { risolviStatoGiornoBarberly } from "@/lib/festivita-italiane";
 import { NextResponse } from "next/server";
 import { prisma, ensureDatabase } from "@/lib/db";
 import { sendNotificationMail } from "@/lib/taaaac-mailer";
@@ -61,6 +62,16 @@ export async function POST(req: Request) {
       .padStart(2, "0");
     const endM = (totalMinutes % 60).toString().padStart(2, "0");
     const endTime = `${endH}:${endM}`;
+
+    // Verifica Chiusura Festività o Ferie
+    const dateStr = (date || new Date().toISOString()).slice(0, 10);
+    const statoGiorno = await risolviStatoGiornoBarberly(dateStr);
+    if (!statoGiorno.isLavorativo) {
+      return NextResponse.json(
+        { error: `La barberia è chiusa nella data selezionata: ${statoGiorno.motivo || statoGiorno.titolo}.` },
+        { status: 400 }
+      );
+    }
 
     // Parsing data
     const appointmentDate = date ? new Date(date) : new Date();
