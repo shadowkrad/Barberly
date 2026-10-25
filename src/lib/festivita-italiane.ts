@@ -187,3 +187,93 @@ export async function risolviStatoGiornoBarberly(
     fonte: "ORARIO_STANDARD",
   };
 }
+
+
+export interface PreavvisoFestivita {
+  data: string; // YYYY-MM-DD
+  nome: string;
+  giorniMancanti: number;
+  dataFormattata: string;
+  isLavorativo: boolean;
+  stato: "APERTO_STANDARD" | "APERTURA_STRAORDINARIA" | "ORARIO_SPECIALE" | "CHIUSO_STANDARD" | "CHIUSO_FESTIVITA" | "CHIUSO_FERIE";
+  titolo: string;
+  motivo?: string;
+  orario?: string;
+  haEccezione: boolean;
+  tipoEccezione?: string | null;
+}
+
+/**
+ * Cerca tutte le festività nazionali o eccezioni di calendario
+ * previste nei prossimi N giorni (default 7 giorni).
+ */
+export async function getProssimeFestivitaBarberly(
+  giorniFinestra: number = 7,
+  daData: Date = new Date()
+): Promise<PreavvisoFestivita[]> {
+  try {
+    await ensureDatabase();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    const risultati: PreavvisoFestivita[] = [];
+
+    const cache = await prisma.tenantLocalCache.findUnique({
+      where: { id: "singleton" },
+    });
+    const rispettaFestivita = (cache as any)?.rispettaFestivitaNazionali ?? true;
+
+    const start = new Date(daData);
+    start.setHours(0, 0, 0, 0);
+
+    for (let i = 0; i <= giorniFinestra; i++) {
+      const current = new Date(start);
+      current.setDate(start.getDate() + i);
+
+      const y = current.getFullYear();
+      const m = current.getMonth() + 1;
+      const d = current.getDate();
+      const dateIso = `${y}-${pad(m)}-${pad(d)}`;
+
+      const fest = rispettaFestivita ? getFestivitaItaliana(dateIso) : { isFestivo: false };
+      const ecc = await prisma.eccezioneCalendario.findUnique({
+        where: { data: dateIso },
+      });
+
+      if (!fest.isFestivo && !ecc) {
+        continue;
+      }
+
+      const risoluzione = await risolviStatoGiornoBarberly(dateIso);
+
+      const nomiGiorni = ["Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato"];
+      const mesi = ["Gennaio", "Febbraio", "Marzo", "Aprile", "Maggio", "Giugno", "Luglio", "Agosto", "Settembre", "Ottobre", "Novembre", "Dicembre"];
+      const dataFormattata = `${nomiGiorni[current.getDay()]} ${d} ${mesi[m - 1]}`;
+
+      let orario: string | undefined;
+      if (risoluzione.isLavorativo && risoluzione.oraInizio && risoluzione.oraFine) {
+        orario = `${risoluzione.oraInizio} – ${risoluzione.oraFine}`;
+        if (risoluzione.pausaInizio && risoluzione.pausaFine) {
+          orario += ` (pausa: ${risoluzione.pausaInizio}-${risoluzione.pausaFine})`;
+        }
+      }
+
+      risultati.push({
+        data: dateIso,
+        nome: ecc?.titolo || fest.nome || "Data Speciale",
+        giorniMancanti: i,
+        dataFormattata,
+        isLavorativo: risoluzione.isLavorativo,
+        stato: risoluzione.stato,
+        titolo: risoluzione.titolo,
+        motivo: risoluzione.motivo,
+        orario,
+        haEccezione: !!ecc,
+        tipoEccezione: ecc?.tipo || null,
+      });
+    }
+
+    return risultati;
+  } catch (error) {
+    console.error("Errore calcolo getProssimeFestivitaBarberly:", error);
+    return [];
+  }
+}

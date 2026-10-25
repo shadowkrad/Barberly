@@ -4,6 +4,8 @@ import { QuickBookingModal } from "@/components/dashboard/QuickBookingModal";
 import { ActiveModulesCard } from "@/components/dashboard/ActiveModulesCard";
 import { prisma, ensureDatabase } from "@/lib/db";
 import { Scissors, UserCheck, Calendar as CalendarIcon, Sparkles } from "lucide-react";
+import BannerPreavvisoFestivita from "@/components/dashboard/BannerPreavvisoFestivita";
+import { getProssimeFestivitaBarberly, PreavvisoFestivita } from "@/lib/festivita-italiane";
 
 export const dynamic = "force-dynamic";
 
@@ -28,10 +30,11 @@ export default async function DashboardMainPage() {
     { id: "c2", firstName: "Davide", lastName: "Moretti", phone: "+39 349 9988776" },
   ];
   let totalClientsCount = 2;
+  let prossimeFestivita: PreavvisoFestivita[] = [];
 
   try {
     await ensureDatabase();
-    const [dbAppointments, dbBarbers, dbServices, dbClients, dbClientsCount] =
+    const [dbAppointments, dbBarbers, dbServices, dbClients, dbClientsCount, dbProssimeFestivita] =
       await Promise.all([
         prisma.appointment.findMany({
           where: {
@@ -61,6 +64,7 @@ export default async function DashboardMainPage() {
           select: { id: true, firstName: true, lastName: true, phone: true },
         }),
         prisma.client.count(),
+        getProssimeFestivitaBarberly(7, today),
       ]);
 
     appointments = dbAppointments;
@@ -68,6 +72,7 @@ export default async function DashboardMainPage() {
     if (dbServices.length > 0) services = dbServices;
     if (dbClients.length > 0) clients = dbClients;
     totalClientsCount = dbClientsCount;
+    if (dbProssimeFestivita) prossimeFestivita = dbProssimeFestivita;
   } catch (err) {
     console.warn("Dati fallback per Barberly dashboard:", err);
   }
@@ -117,6 +122,9 @@ export default async function DashboardMainPage() {
           />
         </div>
       </div>
+
+      {/* Banner Preavviso Festività Nazionali / Date Speciali Entro 7 Giorni */}
+      <BannerPreavvisoFestivita festivita={prossimeFestivita} />
 
       {/* KPI Overview */}
       <StatsOverview
