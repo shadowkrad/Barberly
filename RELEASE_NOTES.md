@@ -55,6 +55,12 @@
   - Nei giorni festivi di chiusura, il report automatico viene silenziosamente sospeso e le prenotazioni online vengono bloccate con l'indicazione della festività.
 - **Notifica di Preavviso in Dashboard (7 Giorni Prima)**: Almeno una settimana prima di una festività nazionale o chiusura speciale, la schermata principale della dashboard mostra al gestore un banner di avviso con il conto alla rovescia dei giorni rimanenti e un link rapido 1-click a *Orari* per impostare con anticipo eventuali aperture straordinarie o orari speciali per le feste.
 
+### 8. 🖨️ Stampa Planning Settimanale A4 Orizzontale (Gestione Analogica per il Salone)
+- **Tasto Stampa Rapida A4**: Integrato direttamente nella barra superiore del calendario settimanale, con icona stampante ed esperienza immediata a 1 clic.
+- **Griglia Settimanale Landscape per Barber Shop**: Generazione di un foglio presenze formato A4 orizzontale ottimizzato per la stampa, con intestazione della barberia, intervallo date e timestamp di emissione.
+- **Supporto Flusso Analogico & Spazi per Note a Penna**: Le prenotazioni già fissate a sistema vengono impaginate con orario, nome cliente, recapito telefonico e servizio; tutti gli slot liberi della giornata presentano righe puntinate pulite (`Nome`, `Tel`, `Servizio`) per consentire ai barbieri presenti al locale di prendere appunti e segnare clienti di passaggio al banco anche in assenza temporanea dell'esercente.
+- **Filtri e Personalizzazione di Stampa**: Finestra modale con anteprima dal vivo per scegliere il numero di giorni (6 giorni Lun-Sab, 5 giorni Lun-Ven o 7 giorni Lun-Dom), il passo orario (30 minuti o 60 minuti compatto) e il filtro per singolo barbiere o intero staff.
+
 ---
 
 ## Novità della Versione 1.0.5 (Hotfix Produzione)

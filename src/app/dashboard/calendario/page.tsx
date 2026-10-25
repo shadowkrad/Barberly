@@ -3,6 +3,8 @@
 import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import NuovoAppuntamentoModal from "@/components/dashboard/NuovoAppuntamentoModal";
 import GestioneModificaModal from "@/components/dashboard/GestioneModificaModal";
+import ModalStampaSettimanaleA4 from "@/components/dashboard/ModalStampaSettimanaleA4";
+import { Printer } from "lucide-react";
 import {
   format,
   startOfWeek,
@@ -439,6 +441,17 @@ export default function BarberlyCalendarioPage() {
   const [modalDate, setModalDate] = useState<string | undefined>(undefined);
   const [modalTime, setModalTime] = useState<string | undefined>(undefined);
   const [modalBarberId, setModalBarberId] = useState<string | undefined>(undefined);
+  const [printModalOpen, setPrintModalOpen] = useState(false);
+  const [nomeSalone, setNomeSalone] = useState<string>("Barber Shop");
+
+  useEffect(() => {
+    fetch("/api/impostazioni")
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (data?.nomeAttivita) setNomeSalone(data.nomeAttivita);
+      })
+      .catch(() => {});
+  }, []);
 
   // Fetch Barbieri / Staff
   useEffect(() => {
