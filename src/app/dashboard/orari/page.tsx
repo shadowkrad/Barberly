@@ -69,6 +69,13 @@ export default function BarberlyOrariPage() {
   const [submittingEcc, setSubmittingEcc] = useState(false);
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const p = new URLSearchParams(window.location.search);
+      if (p.get("tab") === "festivita") {
+        setActiveTab("festivita");
+      }
+    }
+
     Promise.all([
       fetch("/api/orari").then((r) => r.json()),
       fetch("/api/calendario-eccezioni").then((r) => r.json()).catch(() => null),

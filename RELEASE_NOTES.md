@@ -33,6 +33,7 @@
 - **Integrazione Totale Agenda & Report**:
   - Le aperture straordinarie aprono istantaneamente le poltrone prenotabili online e consentono la generazione del report mattutino anche nei giorni ordinariamente festivi.
   - Nei giorni festivi di chiusura, il report automatico viene silenziosamente sospeso e le prenotazioni online vengono bloccate con l'indicazione della festività.
+- **Notifica di Preavviso in Dashboard (7 Giorni Prima)**: Almeno una settimana prima di una festività nazionale o chiusura speciale, la schermata principale della dashboard mostra al gestore un banner di avviso con il conto alla rovescia dei giorni rimanenti e un link rapido 1-click a *Orari* per impostare con anticipo eventuali aperture straordinarie o orari speciali per le feste.
 
 ---
 
