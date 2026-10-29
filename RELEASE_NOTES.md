@@ -1,26 +1,35 @@
-# 💈 Barberly — Release Notes
+﻿# 💈 Barberly — Release Notes
 
 ## Novità della Versione 1.1.0 (In Sviluppo)
 
 ### 1. 💬 Integrazione WhatsApp a 360° (Client Gratuito 1-Click & Connessione Taaaac Hub)
 - **Floating WhatsApp Widget sulla Vetrina Barber Shop**: Aggiunto il pulsante galleggiante WhatsApp ufficiale in basso a destra per permettere a clienti e passanti di chattare subito con la bottega con un tap.
-- **Perfezionamento Grafico Bollino WhatsApp Ufficiale**: integrato il tracciato vettoriale ufficiale Meta WhatsApp (fumetto solido bianco puro `#FFFFFF` ad alta definizione con cornetta verde `#25D366` in risalto), eliminando il vecchio bordo vuoto wireframe e garantendo la massima nitidezza visiva su tutti i dispositivi.
-- **Client WhatsApp Standardizzato (`@/lib/whatsapp-client` & `@/lib/whatsapp-server`)**: Collegamento trasparente al micro-servizio centralizzato di Taaaac Core per le notifiche cloud, preservando l'apertura rapida `wa.me` a costo zero dal browser.
-- **Normalizzazione Cellulari Italiani**: Gestione automatica del prefisso internazionale `39` per tutti i contatti cliente.
+- **Perfezionamento Grafico Bollino WhatsApp Ufficiale**: integrato il tracciato vettoriale ufficiale Meta WhatsApp (fumetto solido bianco puro #FFFFFF ad alta definizione con cornetta verde #25D366 in risalto), eliminando il vecchio bordo vuoto wireframe e garantendo la massima nitidezza visiva su tutti i dispositivi.
+- **Client WhatsApp Standardizzato (@/lib/whatsapp-client & @/lib/whatsapp-server)**: Collegamento trasparente al micro-servizio centralizzato di Taaaac Core per le notifiche cloud, preservando l'apertura rapida wa.me a costo zero dal browser.
+- **Normalizzazione Cellulari Italiani**: Gestione automatica del prefisso internazionale 39 per tutti i contatti cliente.
 
 ### 2. 🌐 Hub Sincronizzazione Omnicanale (Google Maps, Meta Facebook & IG, WhatsApp Business)
-- **Aggiornamento All'Unisono con 1 Click**: Modificando gli orari ordinari o di riposo della bottega in *Dashboard > Orari*, il pulsante `🚀 Salva e Sincronizza su Google & Canali` aggiorna simultaneamente la scheda Google Business Profile (Maps & Ricerca), le Pagine Meta (Facebook & Instagram) e il profilo WhatsApp Business del barbiere.
+- **Aggiornamento All'Unisono con 1 Click**: Modificando gli orari ordinari o di riposo della bottega in *Dashboard > Orari*, il pulsante 🚀 Salva e Sincronizza su Google & Canali aggiorna simultaneamente la scheda Google Business Profile (Maps & Ricerca), le Pagine Meta (Facebook & Instagram) e il profilo WhatsApp Business del barbiere.
 - **Badge di Stato Canali in Tempo Reale**: Nuova scheda visiva nella dashboard orari con indicatori live dello stato di connessione e sincronizzazione per Google Maps, Meta, WhatsApp Business e Google Review Booster.
 - **Architettura Centralizzata Taaaac Core**: Comunicazione sicura e centralizzata con i connettori API esterni gestiti da Taaaac Core.
 
 ### 3. ⭐ Google Review Booster Automatico via Email (5 Stelle Intelligenti)
-- **Email Post-Taglio/Barba Automatica a Costo Zero**: Quando un appuntamento del salone viene segnato come `COMPLETED`, il sistema invia in automatico un'email di ringraziamento elegante con 5 stelle interattive da `noreply@taaaac.eu` senza intaccare le quote WhatsApp.
+- **Email Post-Taglio/Barba Automatica a Costo Zero**: Quando un appuntamento del salone viene segnato come COMPLETED, il sistema invia in automatico un'email di ringraziamento elegante con 5 stelle interattive da 
+oreply@taaaac.eu senza intaccare le quote WhatsApp.
 - **Routing Intelligente Reputazione**:
   - **4 e 5 Stelle (Taglio Perfetto)**: Reindirizzano il cliente alla scheda Google Maps per rilasciare subito una recensione a 5 stelle.
-  - **1, 2 e 3 Stelle (Customer Care)**: Reindirizzano al modulo di feedback privato interno (`/feedback`) permettendo al barbiere di ricontattare il cliente e correggere il servizio prima di danni alla reputazione pubblica.
+  - **1, 2 e 3 Stelle (Customer Care)**: Reindirizzano al modulo di feedback privato interno (/feedback) permettendo al barbiere di ricontattare il cliente e correggere il servizio prima di danni alla reputazione pubblica.
 
 ---
 
+## Novità della Versione 1.0.7 (Hotfix / Patch)
+
+### 1. 🔐 Autenticazione Distinta: Email + Password Titolare & PIN Staff Salone
+- **Accesso Titolare Diretto con Email e Password**: Il titolare del salone accede inserendo l'indirizzo email e la password ricevuti al momento della registrazione o aggiornati nel proprio account Taaaac, eliminando la richiesta confusa del solo PIN/Password generica.
+- **PIN Tastierino Touch Dedicato ai Collaboratori**: Il tastierino numerico PIN rapido è ora dedicato esclusivamente ai barbieri e collaboratori del salone per sbloccare rapidamente i tablet e le postazioni cassa.
+- **Centralizzazione Sicurezza e MFA su Taaaac Core**: Le impostazioni avanzate di sicurezza (2FA TOTP, codici di recupero, cambio password) sono centralizzate al 100% nella dashboard utente di Taaaac (taaaac.eu/portal), semplificando l'esperienza all'interno del modulo satellite.
+
+---
 ## Novità della Versione 1.0.6 (Patch di Sicurezza e Hardening Accessi)
 
 ### 1. 🛡️ Autenticazione a Due Fattori (2FA / MFA Volontaria con Codici di Emergenza)
