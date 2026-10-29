@@ -23,10 +23,8 @@ import {
   ExternalLink,
   LogOut,
   ChevronRight,
-  ShieldCheck,
 } from "lucide-react";
 import SidebarPwaInstall from "@/components/dashboard/SidebarPwaInstall";
-import UserSecurityModal from "@/components/UserSecurityModal";
 
 const baseNavLinks = [
   { href: "/dashboard", label: "Dashboard", icon: Scissors },
@@ -72,7 +70,6 @@ const addonNavLinks = [
 export default function DashboardSidebar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
-  const [showSecurityModal, setShowSecurityModal] = useState(false);
   const { isAddonActive, config } = useTenantConfig();
 
   const activeAddons = addonNavLinks.filter((item) => isAddonActive(item.addonId));
@@ -86,17 +83,6 @@ export default function DashboardSidebar() {
     <>
       {/* Mobile Top Bar */}
       <div className="md:hidden flex items-center justify-between px-4 py-2.5 bg-slate-900 text-white border-b border-slate-800 sticky top-0 z-40">
-                    <button
-              type="button"
-              onClick={() => {
-                setMobileOpen(false);
-                setShowSecurityModal(true);
-              }}
-              className="w-full flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold text-slate-300 hover:bg-slate-900 hover:text-white transition-all cursor-pointer"
-            >
-              <ShieldCheck className="w-4 h-4 shrink-0 text-amber-400" />
-              <span>Sicurezza & 2FA</span>
-            </button>
 <Link href="/dashboard" className="flex items-center gap-1.5 min-w-0">
           <TaaaacLogo iconSize={24} textSize="text-base" showBadge={true} badgeText="Barberly" variant="dark" />
         </Link>
@@ -259,11 +245,6 @@ export default function DashboardSidebar() {
             </span>
           </div>
         </div>
-        <UserSecurityModal
-        isOpen={showSecurityModal}
-        onClose={() => setShowSecurityModal(false)}
-        userEmail=""
-      />
     </aside>
     </>
   );
