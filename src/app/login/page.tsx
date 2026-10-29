@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
   Scissors,
   Lock,
+  Mail,
   ArrowRight,
   Fingerprint,
   Sparkles,
@@ -13,15 +14,26 @@ import {
   Eye,
   EyeOff,
   ArrowLeft,
-  ShieldCheck,
-  ShieldAlert,
   KeyRound,
+  ShieldCheck,
+  Delete,
+  ExternalLink,
 } from "lucide-react";
 
 export default function LoginPage() {
   const router = useRouter();
+
+  // Tab di selezione: Titolare (Email + Password) vs Staff Salone (PIN rapido)
+  const [loginMode, setLoginMode] = useState<"titolare" | "pin">("titolare");
+
+  // Credenziali Titolare
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+
+  // Credenziali Staff (PIN touch)
+  const [pin, setPin] = useState("");
+
   const [brandName, setBrandName] = useState("Gentleman Barber Club");
   const [loading, setLoading] = useState(false);
   const [demoLoading, setDemoLoading] = useState(false);
@@ -30,14 +42,9 @@ export default function LoginPage() {
   const [isDemo, setIsDemo] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // 🛡️ Sicurezza v1.0.6: MFA / 2FA & Anti Brute-Force
-  const [isMfaStep, setIsMfaStep] = useState(false);
-  const [mfaCode, setMfaCode] = useState("");
-  const [isBackupCodeMode, setIsBackupCodeMode] = useState(false);
+  // Sicurezza: Anti-Bot & Lockout
   const [botField, setBotField] = useState("");
   const [lockoutRemaining, setLockoutRemaining] = useState<number | null>(null);
-
-  const mfaInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -48,396 +55,369 @@ export default function LoginPage() {
         hn.includes("-demo") ||
         hn.startsWith("demo.");
       setIsDemo(isDemoDomain);
-    }
 
-    fetch("/api/impostazioni")
-      .then((r) => r.json())
-      .then((d) => {
-        if (d && d.brandName) setBrandName(d.brandName);
-      })
-      .catch(() => {});
-
-    if (typeof window !== "undefined" && window.PublicKeyCredential) {
-      if (typeof PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === "function") {
-        PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
-          .then((avail) => setHasBiometricSupport(avail))
-          .catch(() => setHasBiometricSupport(true));
-      } else {
-        setHasBiometricSupport(true);
+      // Supporto WebAuthn / Touch ID
+      if (
+        window.PublicKeyCredential &&
+        typeof window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable === "function"
+      ) {
+        window.PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable()
+          .then((available) => setHasBiometricSupport(available))
+          .catch(() => setHasBiometricSupport(false));
       }
     }
   }, []);
 
+  // Timer conto alla rovescia se bloccato per tentativi falliti
   useEffect(() => {
-    if (lockoutRemaining === null || lockoutRemaining <= 0) return;
-    const interval = setInterval(() => {
-      setLockoutRemaining((prev) => {
-        if (prev === null || prev <= 1) return null;
-        return prev - 1;
-      });
-    }, 1000);
-    return () => clearInterval(interval);
+    if (lockoutRemaining && lockoutRemaining > 0) {
+      const timer = setInterval(() => {
+        setLockoutRemaining((prev) => {
+          if (!prev || prev <= 1) {
+            clearInterval(timer);
+            return null;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+      return () => clearInterval(timer);
+    }
   }, [lockoutRemaining]);
 
-  useEffect(() => {
-    if (isMfaStep && mfaInputRef.current) {
-      mfaInputRef.current.focus();
+  const handlePinDigit = (digit: string) => {
+    if (pin.length < 6) {
+      setPin((prev) => prev + digit);
+      setErrorMsg(null);
     }
-  }, [isMfaStep, isBackupCodeMode]);
+  };
 
-  const handleDemoLogin = async () => {
-    setDemoLoading(true);
+  const handlePinDelete = () => {
+    setPin((prev) => prev.slice(0, -1));
+  };
+
+  async function handleSubmit(e?: React.FormEvent) {
+    if (e) e.preventDefault();
     setErrorMsg(null);
+
+    if (loginMode === "titolare") {
+      if (!email.trim() || !password) {
+        setErrorMsg("Inserisci l'indirizzo email e la password dell'account.");
+        return;
+      }
+    } else {
+      if (!pin || pin.length < 4) {
+        setErrorMsg("Inserisci il PIN di almeno 4 cifre per accedere.");
+        return;
+      }
+    }
+
+    setLoading(true);
+
+    try {
+      const payload: any = { botField };
+      if (loginMode === "titolare") {
+        payload.email = email.trim();
+        payload.password = password;
+      } else {
+        payload.pin = pin;
+      }
+
+      const res = await fetch("/api/admin/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        if (data.retryAfter) {
+          setLockoutRemaining(data.retryAfter);
+        }
+        throw new Error(data.error || "Credenziali non valide.");
+      }
+
+      router.push("/admin");
+    } catch (err: any) {
+      setErrorMsg(err.message || "Errore durante il login.");
+      if (loginMode === "pin") setPin("");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleDemoLogin() {
+    setErrorMsg(null);
+    setDemoLoading(true);
     try {
       const res = await fetch("/api/admin/auth", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ demo: true }),
       });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.error || "Errore durante l'accesso demo");
-      }
-      router.push("/dashboard");
-      router.refresh();
+      if (!res.ok) throw new Error("Accesso demo non consentito.");
+      router.push("/admin");
     } catch (err: any) {
-      setErrorMsg(err.message || "Errore accesso demo");
+      setErrorMsg(err.message || "Errore demo");
+    } finally {
       setDemoLoading(false);
     }
-  };
-
-  const handleBiometricLogin = async () => {
-    setBiometricLoading(true);
-    setErrorMsg(null);
-    try {
-      const { startAuthentication } = await import("@simplewebauthn/browser");
-      const optRes = await fetch("/api/auth/device/login-options", { method: "POST" });
-      if (!optRes.ok) {
-        const errJson = await optRes.json();
-        throw new Error(errJson.error || "Nessun dispositivo registrato per questa bottega. Accedi prima con password.");
-      }
-      const options = await optRes.json();
-      const authResp = await startAuthentication(options);
-
-      const verifyRes = await fetch("/api/auth/device/login-verify", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ response: authResp }),
-      });
-
-      const verifyData = await verifyRes.json();
-      if (!verifyRes.ok) {
-        throw new Error(verifyData.error || "Sblocco non riuscito");
-      }
-
-      router.push("/dashboard");
-      router.refresh();
-    } catch (err: any) {
-      if (err.name === "NotAllowedError") {
-        setErrorMsg("Sblocco biometrico annullato dall'utente");
-      } else {
-        setErrorMsg(err.message || "Dispositivo non riconosciuto o non registrato. Inserisci la password.");
-      }
-      setBiometricLoading(false);
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!password.trim()) {
-      setErrorMsg("Inserisci la password di accesso.");
-      return;
-    }
-
-    setLoading(true);
-    setErrorMsg(null);
-
-    // ── STEP 1: VERIFICA PASSWORD & CHECK MFA ──
-    if (!isMfaStep) {
-      try {
-        const checkRes = await fetch("/api/admin/auth/check-mfa", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ password, botField }),
-        });
-
-        const checkData = await checkRes.json();
-
-        if (!checkRes.ok) {
-          if (checkRes.status === 429) {
-            setLockoutRemaining(checkData.retryAfter || 900);
-            setErrorMsg(checkData.error || "Troppi tentativi falliti. Accesso sospeso.");
-          } else {
-            setErrorMsg(checkData.error || "Password non corretta.");
-          }
-          setLoading(false);
-          return;
-        }
-
-        if (checkData.mfaRequired) {
-          setIsMfaStep(true);
-          setLoading(false);
-          return;
-        }
-
-        const res = await fetch("/api/admin/auth", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ password, botField }),
-        });
-
-        if (!res.ok) {
-          const data = await res.json();
-          throw new Error(data.error || "Password non corretta");
-        }
-
-        router.push("/dashboard");
-        router.refresh();
-      } catch (err: any) {
-        setErrorMsg(err.message || "Password errata");
-        setLoading(false);
-      }
-      return;
-    }
-
-    // ── STEP 2: VERIFICA CODICE MFA ──
-    if (!mfaCode.trim()) {
-      setErrorMsg(isBackupCodeMode ? "Inserisci il codice di emergenza (es. ABCD-1234)." : "Inserisci il codice a 6 cifre.");
-      setLoading(false);
-      return;
-    }
-
-    try {
-      const res = await fetch("/api/admin/auth", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ password, mfaCode: mfaCode.trim(), botField }),
-      });
-
-      if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || "Codice di sicurezza non corretto");
-      }
-
-      router.push("/dashboard");
-      router.refresh();
-    } catch (err: any) {
-      setErrorMsg(err.message || "Codice di sicurezza non valido");
-      setLoading(false);
-    }
-  };
+  }
 
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center p-4 bg-slate-950 text-slate-100">
-      <div className="w-full max-w-sm mb-4">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-amber-400 transition-colors"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          <span>Torna alla Vetrina Bottega</span>
-        </Link>
-      </div>
+    <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center p-4 relative overflow-hidden font-sans">
+      {/* Sfondo geometrico sfumato */}
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-96 h-96 bg-amber-600/10 rounded-full blur-3xl pointer-events-none" />
 
-      <div className="max-w-sm w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-xl text-center">
-        {/* Brand Icon */}
-        <div className="w-14 h-14 rounded-2xl bg-amber-500 text-slate-950 mx-auto flex items-center justify-center shadow-xs shadow-amber-500/20 mb-4">
-          {isMfaStep ? <ShieldCheck className="w-7 h-7" /> : <Scissors className="w-7 h-7" />}
+      <div className="w-full max-w-md relative z-10">
+        {/* Link Torna al Salone */}
+        <div className="mb-6">
+          <Link
+            href="/"
+            className="inline-flex items-center gap-2 text-xs font-semibold text-slate-400 hover:text-white transition-colors"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Torna alla Vetrina Salone
+          </Link>
         </div>
 
-        <h1 className="text-xl font-black text-white tracking-tight">
-          {isMfaStep ? "Verifica a Due Fattori" : brandName}
-        </h1>
-        <p className="text-xs text-slate-400 mt-1 mb-6 flex items-center justify-center gap-1">
-          <Lock className="w-3.5 h-3.5 text-amber-500" />
-          <span>{isMfaStep ? "Protezione attiva sul gestionale" : "Area Riservata Poltrone & Cassa"}</span>
-        </p>
+        {/* Card di Login */}
+        <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 backdrop-blur-xl shadow-2xl">
+          {/* Header Card */}
+          <div className="text-center mb-6">
+            <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500 mb-4 shadow-inner">
+              <Scissors className="w-7 h-7" />
+            </div>
+            <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight">
+              Accesso Gestionale
+            </h1>
+            <p className="text-xs text-slate-400 mt-1">
+              Area riservata al titolare e allo staff del salone
+            </p>
+          </div>
 
-        {/* Banner Blocco Anti Brute-Force */}
-        {lockoutRemaining !== null && lockoutRemaining > 0 && (
-          <div className="mb-4 p-3.5 rounded-2xl bg-amber-950/80 border border-amber-800 text-amber-200 text-xs font-medium text-left flex items-start gap-2.5">
-            <ShieldAlert className="w-5 h-5 text-amber-400 shrink-0 mt-0.5" />
-            <div>
-              <div className="font-bold mb-0.5 text-amber-300">Accesso temporaneamente protetto</div>
-              <div>
-                Troppi tentativi consecutivi errati. Riprova tra{" "}
-                <span className="font-bold font-mono text-white">
-                  {Math.floor(lockoutRemaining / 60)}m {lockoutRemaining % 60}s
-                </span>.
+          {/* Accesso Rapido Demo */}
+          {isDemo && (
+            <div className="mb-6 p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex flex-col gap-2">
+              <div className="flex items-center gap-2 text-xs font-bold text-amber-400">
+                <Sparkles className="w-4 h-4" />
+                Ambiente Demo Interattivo
+              </div>
+              <button
+                type="button"
+                onClick={handleDemoLogin}
+                disabled={demoLoading}
+                className="w-full py-2.5 px-4 bg-amber-500 hover:bg-amber-600 active:scale-98 text-slate-950 font-bold text-xs rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-sm"
+              >
+                {demoLoading ? "Accesso in corso..." : "Entra come Titolare Demo (1-Click)"}
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          )}
+
+          {/* Banner Errore / Blocco Temporaneo */}
+          {errorMsg && (
+            <div className="mb-6 p-3.5 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-400 flex items-start gap-2.5">
+              <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+              <div className="flex-1 leading-relaxed">
+                {errorMsg}
+                {lockoutRemaining && (
+                  <div className="mt-1 font-semibold text-rose-300">
+                    Sblocco tra: {Math.floor(lockoutRemaining / 60)}m {lockoutRemaining % 60}s
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* 1-Click Demo Box (Solo su ambienti demo Vercel) */}
-        {!isMfaStep && isDemo && (
-          <div className="mb-6 p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-center space-y-2">
-            <div className="flex items-center justify-center gap-1.5 text-xs font-bold text-amber-300">
-              <Sparkles className="w-4 h-4 text-amber-400" />
-              <span>Modalità Demo Attiva</span>
-            </div>
-            <p className="text-[11px] text-amber-200/80">
-              Esplora l'agenda appuntamenti e cassa con un singolo click, senza credenziali.
-            </p>
+          {/* Selettore Tab di Login */}
+          <div className="grid grid-cols-2 p-1 bg-slate-950/60 border border-slate-800 rounded-2xl mb-6">
             <button
               type="button"
-              onClick={handleDemoLogin}
-              disabled={loading || demoLoading}
-              className="w-full py-2.5 px-4 bg-amber-500 hover:bg-amber-400 active:scale-98 text-slate-950 font-bold text-xs rounded-xl shadow-xs transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
+              onClick={() => {
+                setLoginMode("titolare");
+                setErrorMsg(null);
+              }}
+              className={`py-2 px-3 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                loginMode === "titolare"
+                  ? "bg-amber-500 text-slate-950 shadow-md"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
             >
-              {demoLoading ? "Accesso in corso..." : "👉 Accedi alla Demo (1-Click)"}
+              <Mail className="w-3.5 h-3.5" />
+              Titolare (Email)
             </button>
-          </div>
-        )}
-
-        {/* Accesso Rapido Biometrico Passkey (Se supportato dal browser) */}
-        {!isMfaStep && hasBiometricSupport && (
-          <div className="space-y-2 mb-6">
             <button
               type="button"
-              onClick={handleBiometricLogin}
-              disabled={loading || biometricLoading}
-              className="w-full flex items-center justify-center gap-2.5 py-3 px-4 rounded-2xl bg-slate-800 hover:bg-slate-700 active:scale-98 text-white text-xs sm:text-sm font-bold transition shadow-xs cursor-pointer border border-slate-700 disabled:opacity-60"
+              onClick={() => {
+                setLoginMode("pin");
+                setErrorMsg(null);
+              }}
+              className={`py-2 px-3 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                loginMode === "pin"
+                  ? "bg-amber-500 text-slate-950 shadow-md"
+                  : "text-slate-400 hover:text-slate-200"
+              }`}
             >
-              <Fingerprint className={`w-4 h-4 text-amber-400 ${biometricLoading ? "animate-spin" : ""}`} />
-              <span>{biometricLoading ? "Verifica biometrica in corso..." : "Sblocco con FaceID / Impronta / PIN"}</span>
+              <KeyRound className="w-3.5 h-3.5" />
+              Staff (PIN)
             </button>
-            <p className="text-[11px] text-slate-500 text-center font-medium">
-              Dispositivo registrato • Face ID • Touch ID • PIN
-            </p>
-
-            <div className="flex items-center gap-3 py-2">
-              <div className="flex-1 h-px bg-slate-800" />
-              <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">oppure con password</span>
-              <div className="flex-1 h-px bg-slate-800" />
-            </div>
           </div>
-        )}
 
-        {/* Feedback Errore */}
-        {errorMsg && (
-          <div className="mb-4 p-3 rounded-xl bg-rose-950/80 border border-rose-800 text-rose-300 text-xs font-semibold flex items-center gap-2 text-left">
-            <AlertCircle className="w-4 h-4 shrink-0 text-rose-400" />
-            <span>{errorMsg}</span>
-          </div>
-        )}
+          {/* FORM 1: TITOLARE CON EMAIL E PASSWORD */}
+          {loginMode === "titolare" ? (
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {/* Campo Trappola Anti-Bot */}
+              <input
+                type="text"
+                name="botField"
+                value={botField}
+                onChange={(e) => setBotField(e.target.value)}
+                style={{ display: "none" }}
+                tabIndex={-1}
+                autoComplete="off"
+              />
 
-        {/* Campo Honey-pot invisibile anti-bot */}
-        <div style={{ display: "none" }} aria-hidden="true">
-          <input
-            type="text"
-            name="security_honeypot_field"
-            value={botField}
-            onChange={(e) => setBotField(e.target.value)}
-            tabIndex={-1}
-            autoComplete="off"
-          />
-        </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                  Email Account Titolare
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                    <Mail className="w-4 h-4" />
+                  </div>
+                  <input
+                    type="email"
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="nome@salone.it"
+                    className="w-full pl-10 pr-4 py-3 rounded-xl border border-slate-700 bg-slate-950 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition"
+                  />
+                </div>
+              </div>
 
-        {/* ── STEP 1: FORM PASSWORD MASTER ── */}
-        {!isMfaStep && (
-          <form onSubmit={handleSubmit} className="space-y-4 text-left">
-            <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1.5 uppercase tracking-wider">
-                Password Gestionale
-              </label>
-              <div className="relative">
-                <input
-                  type={showPassword ? "text" : "password"}
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="Inserisci password"
-                  required
-                  className="w-full pl-3.5 pr-10 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm font-medium text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-amber-500 transition"
-                />
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                  Password
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
+                    <Lock className="w-4 h-4" />
+                  </div>
+                  <input
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••••••"
+                    className="w-full pl-10 pr-10 py-3 rounded-xl border border-slate-700 bg-slate-950 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-amber-500 focus:ring-1 focus:ring-amber-500 transition"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-slate-300 cursor-pointer"
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading || Boolean(lockoutRemaining && lockoutRemaining > 0)}
+                className="w-full mt-2 py-3.5 px-4 bg-amber-500 hover:bg-amber-600 active:scale-98 text-slate-950 font-bold text-sm rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-amber-500/10 disabled:opacity-50"
+              >
+                {loading ? "Verifica in corso..." : "Accedi alla Dashboard"}
+                <ArrowRight className="w-4 h-4" />
+              </button>
+
+              <div className="pt-2 text-center">
+                <a
+                  href="https://taaaac.eu/portal"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-amber-400 transition"
+                >
+                  Password dimenticata o gestisci credenziali?
+                  <ExternalLink className="w-3 h-3" />
+                </a>
+              </div>
+            </form>
+          ) : (
+            /* FORM 2: STAFF SALONE CON TASTIERINO PIN RAPIDO */
+            <div className="space-y-4">
+              <div className="text-center">
+                <p className="text-xs text-slate-400 mb-2">
+                  Inserisci il tuo PIN rapido a 4 cifre per accedere alla cassa o ai tablet del salone
+                </p>
+
+                {/* Pallini Cifre Mascherate */}
+                <div className="flex items-center justify-center gap-3 py-3">
+                  {[0, 1, 2, 3].map((idx) => (
+                    <div
+                      key={idx}
+                      className={`w-4 h-4 rounded-full border transition-all ${
+                        pin.length > idx
+                          ? "bg-amber-500 border-amber-500 scale-110 shadow-sm shadow-amber-500/50"
+                          : "border-slate-700 bg-slate-950"
+                      }`}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Tastierino Touch */}
+              <div className="grid grid-cols-3 gap-2 pt-2">
+                {["1", "2", "3", "4", "5", "6", "7", "8", "9"].map((digit) => (
+                  <button
+                    key={digit}
+                    type="button"
+                    onClick={() => handlePinDigit(digit)}
+                    className="h-12 bg-slate-800/80 hover:bg-slate-750 active:bg-slate-700 border border-slate-700/60 rounded-xl text-base font-bold text-white transition flex items-center justify-center cursor-pointer shadow-sm active:scale-95"
+                  >
+                    {digit}
+                  </button>
+                ))}
                 <button
                   type="button"
-                  onClick={() => setShowPassword(!showPassword)}
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-500 hover:text-slate-300 cursor-pointer"
+                  onClick={() => setPin("")}
+                  className="h-12 bg-slate-900 hover:bg-slate-850 active:bg-slate-800 border border-slate-800 rounded-xl text-xs font-semibold text-slate-400 transition flex items-center justify-center cursor-pointer"
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  Cancella
+                </button>
+                <button
+                  type="button"
+                  onClick={() => handlePinDigit("0")}
+                  className="h-12 bg-slate-800/80 hover:bg-slate-750 active:bg-slate-700 border border-slate-700/60 rounded-xl text-base font-bold text-white transition flex items-center justify-center cursor-pointer shadow-sm active:scale-95"
+                >
+                  0
+                </button>
+                <button
+                  type="button"
+                  onClick={handlePinDelete}
+                  className="h-12 bg-slate-900 hover:bg-slate-850 active:bg-slate-800 border border-slate-800 rounded-xl text-slate-400 transition flex items-center justify-center cursor-pointer"
+                >
+                  <Delete className="w-4 h-4" />
                 </button>
               </div>
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading || demoLoading || biometricLoading || Boolean(lockoutRemaining && lockoutRemaining > 0)}
-              className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-400 active:scale-98 text-slate-950 font-bold text-xs sm:text-sm rounded-xl shadow-xs transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-60"
-            >
-              {loading ? "Verifica in corso..." : "Accedi alla Cassa & Agenda"}
-              <ArrowRight className="w-4 h-4" />
-            </button>
-          </form>
-        )}
-
-        {/* ── STEP 2: FORM MFA / CODICE DI EMERGENZA ── */}
-        {isMfaStep && (
-          <form onSubmit={handleSubmit} className="space-y-4 text-left">
-            <div className="p-3 rounded-xl bg-amber-950/40 border border-amber-800/60 text-xs text-amber-200 leading-relaxed">
-              {isBackupCodeMode
-                ? "Inserisci uno dei codici di emergenza generati durante la configurazione della sicurezza."
-                : "Inserisci il codice a 6 cifre generato dalla tua app di autenticazione (Google Authenticator, Microsoft Authenticator o simili)."}
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-amber-400 mb-1.5 flex items-center gap-1.5">
-                <KeyRound className="w-3.5 h-3.5 text-amber-400" />
-                {isBackupCodeMode ? "Codice di Recupero di Emergenza" : "Codice Authenticator (6 Cifre)"}
-              </label>
-              <input
-                ref={mfaInputRef}
-                type="text"
-                required
-                maxLength={isBackupCodeMode ? 12 : 6}
-                value={mfaCode}
-                onChange={(e) => setMfaCode(e.target.value.toUpperCase())}
-                placeholder={isBackupCodeMode ? "ABCD-1234" : "123456"}
-                className="w-full px-3.5 py-3 rounded-xl border border-amber-500/50 text-lg font-mono text-center tracking-widest text-white focus:outline-none focus:ring-2 focus:ring-amber-500 bg-slate-950"
-              />
-            </div>
-
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 px-4 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs sm:text-sm rounded-xl shadow-xs transition flex items-center justify-center gap-2 cursor-pointer active:scale-98 disabled:opacity-60"
-            >
-              {loading ? "Convalida in corso..." : "Conferma ed Entra"}
-              <ShieldCheck className="w-4 h-4" />
-            </button>
-
-            <div className="pt-2 flex items-center justify-between text-[11px]">
-              <button
-                type="button"
-                onClick={() => {
-                  setIsBackupCodeMode(!isBackupCodeMode);
-                  setMfaCode("");
-                  setErrorMsg(null);
-                }}
-                className="text-amber-400 hover:text-amber-300 font-semibold underline cursor-pointer"
-              >
-                {isBackupCodeMode ? "Usa app Authenticator" : "Usa codice di emergenza"}
-              </button>
 
               <button
                 type="button"
-                onClick={() => {
-                  setIsMfaStep(false);
-                  setMfaCode("");
-                  setErrorMsg(null);
-                }}
-                className="text-slate-400 hover:text-slate-200 font-medium cursor-pointer"
+                onClick={() => handleSubmit()}
+                disabled={loading || pin.length < 4}
+                className="w-full mt-2 bg-amber-500 hover:bg-amber-600 active:scale-98 text-slate-950 font-bold py-3.5 px-4 rounded-xl text-sm transition flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 shadow-lg shadow-amber-500/10"
               >
-                ← Torna indietro
+                {loading ? "Verifica PIN..." : "Sblocca Postazione"}
+                <ArrowRight className="w-4 h-4" />
               </button>
             </div>
-          </form>
-        )}
+          )}
+        </div>
 
-        <div className="mt-6 pt-4 border-t border-slate-800 text-center">
-          <p className="text-[11px] text-slate-500">
-            Per abilitare lo sblocco rapido con FaceID o PIN su questo smartphone o tablet, accedi ed esegui la registrazione in <strong className="text-slate-400">Impostazioni &gt; Dispositivi PWA</strong>.
-          </p>
+        {/* Footer Informativo */}
+        <div className="mt-6 text-center text-xs text-slate-500">
+          Autenticazione protetta e monitorata con Taaaac Cloud Security.
         </div>
       </div>
     </div>
