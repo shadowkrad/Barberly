@@ -1,5 +1,7 @@
 "use client";
 
+import OmnichannelSyncCard from "@/components/dashboard/OmnichannelSyncCard";
+
 import { useState, useEffect } from "react";
 import {
   Clock,
@@ -389,6 +391,15 @@ export default function BarberlyOrariPage() {
             <span>Nuova Data Speciale</span>
           </button>
         )}
+      </div>
+
+      {/* Omnichannel Sync Hub v1.1.0 */}
+      <div className="mt-4 mb-4">
+        <OmnichannelSyncCard
+          orari={typeof orari !== "undefined" ? orari : []}
+          eccezioni={typeof eccezioni !== "undefined" ? eccezioni : []}
+          accentColor="amber"
+        />
       </div>
 
       {/* Tabs di navigazione */}
