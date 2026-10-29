@@ -49,8 +49,9 @@ export default function ShowcaseVisualStudio() {
   // File Inputs Refs
   const coverInputRef = useRef<HTMLInputElement | null>(null);
   const galleryInputRef = useRef<HTMLInputElement | null>(null);
-  const aboutImageInputRef = useRef<HTMLInputElement | null>(null);
   const logoInputRef = useRef<HTMLInputElement | null>(null);
+  const faviconInputRef = useRef<HTMLInputElement | null>(null);
+  const aboutImageInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     fetch("/api/impostazioni/vetrina")
@@ -624,6 +625,143 @@ export default function ShowcaseVisualStudio() {
                   <p className="text-[11px] text-slate-400 mt-0.5">
                     Personalizza il colore primario e l&apos;accento luminoso di bottega.
                   </p>
+                </div>
+
+                {/* LOGO BOTTEGA & FAVICON PWA */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-3.5 rounded-xl border border-slate-800 bg-slate-950/60">
+                  {/* LOGO */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-bold text-amber-400 uppercase tracking-wider">
+                        Logo Ufficiale Bottega
+                      </label>
+                      {config.logoUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setConfig({ ...config, logoUrl: null })}
+                          className="text-[11px] text-rose-400 hover:underline font-semibold cursor-pointer"
+                        >
+                          Rimuovi
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      ref={logoInputRef}
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setImageProcessing("logo");
+                          processImageFile(file, 512, "image/webp", (dataUrl) => {
+                            setConfig((prev) => ({ ...prev, logoUrl: dataUrl }));
+                            setImageProcessing(null);
+                          });
+                        }
+                      }}
+                    />
+                    {config.logoUrl ? (
+                      <div className="flex items-center gap-3 p-2 bg-slate-900 rounded-xl border border-slate-800">
+                        <div className="w-14 h-14 rounded-lg bg-slate-950 flex items-center justify-center p-1 border border-slate-800 shrink-0 overflow-hidden">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={config.logoUrl} alt="Logo" className="max-w-full max-h-full object-contain" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs font-bold text-white truncate">Logo Personalizzato</div>
+                          <p className="text-[10px] text-amber-400 font-medium">Attivo su vetrina e navbar</p>
+                          <button
+                            type="button"
+                            onClick={() => logoInputRef.current?.click()}
+                            className="mt-1 text-xs text-amber-300 hover:text-amber-200 font-bold flex items-center gap-1 cursor-pointer"
+                          >
+                            <Upload className="w-3 h-3" />
+                            <span>Cambia Logo</span>
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => logoInputRef.current?.click()}
+                        className="w-full border-2 border-dashed border-slate-700 hover:border-amber-500 rounded-xl p-3 text-center cursor-pointer bg-slate-900 hover:bg-slate-850 transition"
+                      >
+                        <Upload className="w-4 h-4 text-amber-400 mx-auto mb-1" />
+                        <div className="text-xs text-slate-200 font-semibold">Carica Logo Bottega</div>
+                        <p className="text-[10px] text-slate-400 mt-0.5">PNG o WebP trasparente (max 512px)</p>
+                      </button>
+                    )}
+                    {imageProcessing === "logo" && (
+                      <div className="text-xs text-amber-400 animate-pulse text-center">Ottimizzazione logo in corso...</div>
+                    )}
+                  </div>
+
+                  {/* FAVICON & ICONA PWA */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-bold text-amber-400 uppercase tracking-wider">
+                        Favicon &amp; Icona App (PWA)
+                      </label>
+                      {config.faviconUrl && (
+                        <button
+                          type="button"
+                          onClick={() => setConfig({ ...config, faviconUrl: null })}
+                          className="text-[11px] text-rose-400 hover:underline font-semibold cursor-pointer"
+                        >
+                          Rimuovi
+                        </button>
+                      )}
+                    </div>
+                    <input
+                      type="file"
+                      ref={faviconInputRef}
+                      accept="image/*"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setImageProcessing("favicon");
+                          processImageFile(file, 128, "image/png", (dataUrl) => {
+                            setConfig((prev) => ({ ...prev, faviconUrl: dataUrl }));
+                            setImageProcessing(null);
+                          });
+                        }
+                      }}
+                    />
+                    {config.faviconUrl ? (
+                      <div className="flex items-center gap-3 p-2 bg-slate-900 rounded-xl border border-slate-800">
+                        <div className="w-12 h-12 rounded-lg bg-slate-950 flex items-center justify-center p-1 border border-slate-800 shrink-0 overflow-hidden">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={config.faviconUrl} alt="Favicon" className="max-w-full max-h-full object-contain" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-xs font-bold text-white truncate">Icona Browser &amp; PWA</div>
+                          <p className="text-[10px] text-amber-400 font-medium">Formato 128x128 PNG HD</p>
+                          <button
+                            type="button"
+                            onClick={() => faviconInputRef.current?.click()}
+                            className="mt-1 text-xs text-amber-300 hover:text-amber-200 font-bold flex items-center gap-1 cursor-pointer"
+                          >
+                            <Upload className="w-3 h-3" />
+                            <span>Cambia Favicon</span>
+                          </button>
+                        </div>
+                      </div>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => faviconInputRef.current?.click()}
+                        className="w-full border-2 border-dashed border-slate-700 hover:border-amber-500 rounded-xl p-3 text-center cursor-pointer bg-slate-900 hover:bg-slate-850 transition"
+                      >
+                        <Upload className="w-4 h-4 text-amber-400 mx-auto mb-1" />
+                        <div className="text-xs text-slate-200 font-semibold">Carica Favicon / Icona App</div>
+                        <p className="text-[10px] text-slate-400 mt-0.5">Quadrata, PNG o ICO (128x128 px)</p>
+                      </button>
+                    )}
+                    {imageProcessing === "favicon" && (
+                      <div className="text-xs text-amber-400 animate-pulse text-center">Ottimizzazione favicon in corso...</div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
