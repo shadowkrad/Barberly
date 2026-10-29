@@ -12,10 +12,13 @@ export async function generateMetadata(): Promise<Metadata> {
       template: `%s | ${brand}`,
     },
     description: `Servizi e prenotazioni online per ${brand}`,
-    manifest: "/manifest.json",
+    manifest: "/manifest.webmanifest",
     icons: {
-      icon: config.theme.faviconUrl || "/icon.svg",
-      apple: config.theme.faviconUrl || "/apple-touch-icon.png",
+      icon: [
+        { url: "/api/pwa-icon?size=192", sizes: "192x192", type: "image/png" },
+        { url: "/favicon.ico", sizes: "any" },
+      ],
+      apple: [{ url: "/api/pwa-icon?size=180", sizes: "180x180", type: "image/png" }],
     },
     appleWebApp: {
       capable: true,
@@ -49,9 +52,9 @@ export default async function RootLayout({
   return (
     <html lang="it">
       <head>
-        <link rel="icon" href={config.theme.faviconUrl || "/icon.svg"} />
-        <link rel="apple-touch-icon" sizes="180x180" href={config.theme.faviconUrl || "/apple-touch-icon.png"} />
-        <link rel="manifest" href="/manifest.json" />
+        <link rel="icon" href="/api/pwa-icon?size=192" sizes="any" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/api/pwa-icon?size=180" />
+        <link rel="manifest" href="/manifest.webmanifest" />
         <style dangerouslySetInnerHTML={{ __html: dynamicCssVariables }} />
       </head>
       <body className="min-h-screen bg-slate-50 flex flex-col antialiased selection:bg-amber-100 selection:text-amber-900">
