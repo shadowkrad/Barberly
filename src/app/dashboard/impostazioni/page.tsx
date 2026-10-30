@@ -24,8 +24,11 @@ import {
 import EmailSettingsCard from "@/components/dashboard/EmailSettingsCard";
 import RegisteredDevicesCard from "@/components/dashboard/RegisteredDevicesCard";
 import ShowcaseVisualStudio from "@/components/dashboard/showcase/ShowcaseVisualStudio";
+import TelegramSettingsPanel, { TelegramSettingsData } from "@/components/dashboard/TelegramSettingsPanel";
+import FidelitySettingsPanel, { FidelitySettingsData } from "@/components/dashboard/FidelitySettingsPanel";
+import { Send, Award } from "lucide-react";
 
-type SettingsTab = "bottega" | "orari" | "email" | "whatsapp" | "dispositivi" | "aspetto";
+type SettingsTab = "bottega" | "orari" | "email" | "whatsapp" | "telegram" | "fidelity" | "dispositivi" | "aspetto";
 
 interface TabItem {
   id: SettingsTab;
@@ -70,6 +73,22 @@ const TABS: TabItem[] = [
     description: "Promemoria automatici ai clienti 2 ore prima del taglio",
   },
   {
+    id: "telegram",
+    label: "Telegram Hub & Staff",
+    shortLabel: "Telegram",
+    iconComponent: Send,
+    shortDescription: "Bot ed avvisi staff",
+    description: "Notifiche appuntamenti staff su gruppo Telegram e One-Tap Connect a zero crediti",
+  },
+  {
+    id: "fidelity",
+    label: "Fidelity & Punti",
+    shortLabel: "Fidelity",
+    iconComponent: Award,
+    shortDescription: "Raccolta punti e premi",
+    description: "Fidelizzazione clienti con numero di telefono, accredito punti e catalogo premi",
+  },
+  {
     id: "dispositivi",
     label: "Dispositivi PWA",
     shortLabel: "Dispositivi",
@@ -91,6 +110,21 @@ export default function BarberlyImpostazioniPage() {
   const [activeTab, setActiveTab] = useState<SettingsTab>("bottega");
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  // Telegram & Fidelity State
+  const [telegramSettings, setTelegramSettings] = useState<TelegramSettingsData>({
+    enabled: false,
+    botToken: "",
+    botUsername: "",
+    staffChatId: "",
+  });
+
+  const [fidelitySettings, setFidelitySettings] = useState<FidelitySettingsData>({
+    enabled: false,
+    pointsPerEuro: 1,
+    welcomeBonusPoints: 10,
+    minPointsToRedeem: 40,
+    rewards: [],
+  });
 
   // Form State
   const [form, setForm] = useState({
@@ -133,6 +167,8 @@ export default function BarberlyImpostazioniPage() {
             emailBottega: data.contactEmail || f.emailBottega,
             telefono: data.phone || f.telefono,
           }));
+          if (data.telegramSettings) setTelegramSettings(data.telegramSettings);
+          if (data.fidelitySettings) setFidelitySettings(data.fidelitySettings);
         }
       })
       .catch((err) => console.error("Errore caricamento impostazioni:", err));
@@ -206,6 +242,8 @@ export default function BarberlyImpostazioniPage() {
           accentColor: form.coloreAccento,
           contactEmail: form.emailBottega,
           phone: form.telefono,
+          telegramSettings,
+          fidelitySettings,
         }),
       });
 

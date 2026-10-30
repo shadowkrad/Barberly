@@ -101,6 +101,12 @@ model TenantLocalCache {
   rispettaFestivitaNazionali Boolean @default(true)
   cancelHoursNotice   Int      @default(24)
   showcaseConfig      String?  @default("{}")
+  telegramEnabled     Boolean   @default(false)
+  telegramBotToken    String?
+  telegramBotUsername String?
+  telegramStaffChatId String?
+  fidelityEnabled     Boolean   @default(false)
+  fidelityRules       String?   @default("{}")
   lastSyncedAt        DateTime @default(now())
   // 🛡️ Sicurezza v1.0.6: 2FA / MFA, Brute Force & Audit
   mfaEnabled          Boolean   @default(false)
