@@ -361,7 +361,7 @@ export default async function PublicHomePage() {
         )}
 
         {/* Sezione Chi Siamo / Bottega */}
-        {showcase.sections.showAbout && showcase.about.enabled && (
+        {showcase.sections.showAbout && (
           <section className="bg-slate-900 text-white rounded-3xl p-8 sm:p-12 border border-slate-800 shadow-sm relative overflow-hidden">
             <div className="max-w-3xl mx-auto text-center space-y-4 relative z-10">
               <span

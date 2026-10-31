@@ -841,27 +841,14 @@ export default function ShowcaseVisualStudio() {
             {/* 4. CHI SIAMO & STORIA */}
             {activeControlTab === "chisiamo" && (
               <div className="space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-800 pb-2">
-                  <div>
-                    <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
-                      <Quote className="w-4 h-4 text-amber-400" />
-                      <span>Sezione Chi Siamo & Bottega</span>
-                    </h3>
-                    <p className="text-[11px] text-slate-400 mt-0.5">
-                      Racconta la filosofia, l&apos;esperienza e la storia del tuo salone.
-                    </p>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={config.about.enabled}
-                      onChange={(e) =>
-                        setConfig({ ...config, about: { ...config.about, enabled: e.target.checked } })
-                      }
-                      className="sr-only peer"
-                    />
-                    <div className="w-9 h-5 bg-slate-800 peer-focus:outline-hidden rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
-                  </label>
+                <div className="border-b border-slate-800 pb-2">
+                  <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                    <Quote className="w-4 h-4 text-amber-400" />
+                    <span>Sezione Chi Siamo & Bottega</span>
+                  </h3>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Racconta la filosofia, l&apos;esperienza e la storia del tuo salone.
+                  </p>
                 </div>
 
                 <div>
@@ -1421,7 +1408,7 @@ export default function ShowcaseVisualStudio() {
               )}
 
               {/* 5. CHI SIAMO & BOTTEGA */}
-              {config.sections.showAbout && config.about.enabled && (
+              {config.sections.showAbout && (
                 <section className="p-5 text-center space-y-3 bg-slate-900 border-b border-slate-800">
                   <span
                     className="text-[10px] font-bold uppercase tracking-wider"
