@@ -4,6 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import {
   ShowcaseConfig,
   DEFAULT_BARBERLY_SHOWCASE_CONFIG,
+  DEFAULT_BARBERLY_CONTACT_INFO,
   GalleryPhotoItem,
 } from "@/lib/showcase-defaults";
 import {
@@ -35,7 +36,7 @@ import {
   Quote,
 } from "lucide-react";
 
-type ControlTab = "hero" | "media" | "colori" | "chisiamo" | "sezioni" | "badges";
+type ControlTab = "hero" | "media" | "colori" | "chisiamo" | "contatti" | "sezioni" | "badges";
 
 export default function ShowcaseVisualStudio() {
   const [config, setConfig] = useState<ShowcaseConfig>(DEFAULT_BARBERLY_SHOWCASE_CONFIG);
@@ -316,6 +317,7 @@ export default function ShowcaseVisualStudio() {
               { id: "media", label: "Media & Foto", icon: ImageIcon },
               { id: "colori", label: "Colori", icon: Palette },
               { id: "chisiamo", label: "Chi Siamo", icon: Quote },
+              { id: "contatti", label: "Orari & Bottega", icon: MapPin },
               { id: "sezioni", label: "Sezioni", icon: Eye },
               { id: "badges", label: "Badges", icon: Award },
             ].map((tab) => {
@@ -930,6 +932,170 @@ export default function ShowcaseVisualStudio() {
               </div>
             )}
 
+                        {/* CONTATTI, ORARI & BOTTEGA */}
+            {activeControlTab === "contatti" && (
+              <div className="space-y-4">
+                <div className="border-b border-slate-800 pb-2">
+                  <h3 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+                    <MapPin className="w-4 h-4 text-amber-400" />
+                    <span>Orari di Bottega, Posizione & Recapiti</span>
+                  </h3>
+                  <p className="text-[11px] text-slate-400 mt-0.5">
+                    Modifica tutti i dati di contatto, orari e claim visibili nel footer e nella vetrina pubblica.
+                  </p>
+                </div>
+
+                {/* Claim e Garanzia */}
+                <div className="space-y-3 bg-slate-900/60 p-3.5 rounded-2xl border border-slate-800">
+                  <h4 className="text-[10px] font-bold text-slate-300 uppercase tracking-wider">
+                    Descrizioni & Claim Footer
+                  </h4>
+                  <div className="space-y-2">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 mb-1">Claim Principale di Bottega</label>
+                      <textarea
+                        rows={2}
+                        value={config.contactInfo?.brandClaim || ""}
+                        onChange={(e) =>
+                          setConfig({
+                            ...config,
+                            contactInfo: { ...(config.contactInfo || DEFAULT_BARBERLY_CONTACT_INFO), brandClaim: e.target.value },
+                          })
+                        }
+                        placeholder="Il punto di riferimento per il grooming maschile..."
+                        className="w-full text-xs px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-white focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 mb-1">Testo Garanzia & Qualità</label>
+                      <textarea
+                        rows={2}
+                        value={config.contactInfo?.guaranteeText || ""}
+                        onChange={(e) =>
+                          setConfig({
+                            ...config,
+                            contactInfo: { ...(config.contactInfo || DEFAULT_BARBERLY_CONTACT_INFO), guaranteeText: e.target.value },
+                          })
+                        }
+                        placeholder="Tagli su misura, cura della barba e rituali di benessere..."
+                        className="w-full text-xs px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-white focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Orari di Bottega */}
+                <div className="space-y-3 bg-slate-900/60 p-3.5 rounded-2xl border border-slate-800">
+                  <h4 className="text-[10px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <Clock className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Orari di Apertura</span>
+                  </h4>
+                  <div className="space-y-2">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 mb-1">Orari Feriali (Mar - Ven)</label>
+                      <input
+                        type="text"
+                        value={config.contactInfo?.hoursWeekday || ""}
+                        onChange={(e) =>
+                          setConfig({
+                            ...config,
+                            contactInfo: { ...(config.contactInfo || DEFAULT_BARBERLY_CONTACT_INFO), hoursWeekday: e.target.value },
+                          })
+                        }
+                        placeholder="Martedì – Venerdì: 09:00 – 13:00 / 14:30 – 19:30"
+                        className="w-full text-xs px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-white focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 mb-1">Orari Weekend (Sabato)</label>
+                      <input
+                        type="text"
+                        value={config.contactInfo?.hoursWeekend || ""}
+                        onChange={(e) =>
+                          setConfig({
+                            ...config,
+                            contactInfo: { ...(config.contactInfo || DEFAULT_BARBERLY_CONTACT_INFO), hoursWeekend: e.target.value },
+                          })
+                        }
+                        placeholder="Sabato: 08:30 – 19:00 (Continuato)"
+                        className="w-full text-xs px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-white focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 mb-1">Note Chiusura & Appuntamenti</label>
+                      <input
+                        type="text"
+                        value={config.contactInfo?.hoursNote || ""}
+                        onChange={(e) =>
+                          setConfig({
+                            ...config,
+                            contactInfo: { ...(config.contactInfo || DEFAULT_BARBERLY_CONTACT_INFO), hoursNote: e.target.value },
+                          })
+                        }
+                        placeholder="Lunedì e Domenica: Chiuso • Si riceve su appuntamento"
+                        className="w-full text-xs px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-white focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Posizione & Indirizzo */}
+                <div className="space-y-3 bg-slate-900/60 p-3.5 rounded-2xl border border-slate-800">
+                  <h4 className="text-[10px] font-bold text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-amber-400" />
+                    <span>Sede & Recapiti</span>
+                  </h4>
+                  <div className="space-y-2">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 mb-1">Indirizzo Completo</label>
+                      <input
+                        type="text"
+                        value={config.contactInfo?.address || ""}
+                        onChange={(e) =>
+                          setConfig({
+                            ...config,
+                            contactInfo: { ...(config.contactInfo || DEFAULT_BARBERLY_CONTACT_INFO), address: e.target.value },
+                          })
+                        }
+                        placeholder="Via Roma, 42 — Milano (MI)"
+                        className="w-full text-xs px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-white focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 mb-1">Telefono / WhatsApp</label>
+                      <input
+                        type="text"
+                        value={config.contactInfo?.phone || ""}
+                        onChange={(e) =>
+                          setConfig({
+                            ...config,
+                            contactInfo: { ...(config.contactInfo || DEFAULT_BARBERLY_CONTACT_INFO), phone: e.target.value },
+                          })
+                        }
+                        placeholder="+39 02 1234567"
+                        className="w-full text-xs px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-white focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 mb-1">Email di Contatto</label>
+                      <input
+                        type="email"
+                        value={config.contactInfo?.email || ""}
+                        onChange={(e) =>
+                          setConfig({
+                            ...config,
+                            contactInfo: { ...(config.contactInfo || DEFAULT_BARBERLY_CONTACT_INFO), email: e.target.value },
+                          })
+                        }
+                        placeholder="info@gentlemanbarber.it"
+                        className="w-full text-xs px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-white focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* 5. VISIBILITÀ SEZIONI */}
             {activeControlTab === "sezioni" && (
               <div className="space-y-4">
@@ -1285,11 +1451,11 @@ export default function ShowcaseVisualStudio() {
                 <footer className="p-4 bg-slate-950 text-center space-y-2 text-[10px] text-slate-400">
                   <div className="flex items-center justify-center gap-1 text-slate-300 font-semibold">
                     <MapPin className="w-3 h-3 text-amber-400" />
-                    <span>Via Roma, 42 — Milano (MI)</span>
+                    <span>{config.contactInfo?.address || "Via Roma, 42 — Milano (MI)"} • Tel. {config.contactInfo?.phone || "+39 02 1234567"}</span>
                   </div>
                   <div className="flex items-center justify-center gap-1">
                     <Clock className="w-3 h-3 text-amber-400" />
-                    <span>Mar - Sab: 09:00 - 19:30</span>
+                    <span>{config.contactInfo?.hoursWeekday || "Mar - Ven: 09:00 - 19:30"} • {config.contactInfo?.hoursWeekend || "Sab: 08:30 - 19:00"}</span>
                   </div>
                   <p className="text-[9px] text-slate-600 pt-2 border-t border-slate-900">
                     Powered by Taaaac Suite • Barberly Grooming

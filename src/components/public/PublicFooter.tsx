@@ -1,7 +1,8 @@
 import React from "react";
 import Link from "next/link";
-import { Scissors, MapPin, Phone, Clock, Lock, Sparkles } from "lucide-react";
+import { Scissors, MapPin, Phone, Clock, Lock, Sparkles, Mail } from "lucide-react";
 import { TenantConfigResponse } from "@/types/taaaac";
+import { parseShowcaseConfig } from "@/lib/showcase-defaults";
 
 interface PublicFooterProps {
   config: TenantConfigResponse;
@@ -9,6 +10,11 @@ interface PublicFooterProps {
 
 export function PublicFooter({ config }: PublicFooterProps) {
   const { theme, contact } = config;
+  const showcase = typeof config.showcaseConfig === "string" 
+    ? parseShowcaseConfig(config.showcaseConfig)
+    : (config.showcaseConfig || parseShowcaseConfig(null));
+
+  const contactInfo = showcase.contactInfo || {};
 
   return (
     <footer className="w-full bg-slate-900 text-slate-300 border-t border-slate-800 pt-12 pb-8 mt-20">
@@ -19,14 +25,14 @@ export function PublicFooter({ config }: PublicFooterProps) {
             <div className="flex items-center gap-2 text-white font-extrabold text-base">
               <div
                 className="w-8 h-8 rounded-lg flex items-center justify-center text-amber-400"
-                style={{ backgroundColor: theme.primaryColor }}
+                style={{ backgroundColor: theme.primaryColor || showcase.primaryColor }}
               >
                 <Scissors className="w-4 h-4" />
               </div>
-              <span>{theme.brandName}</span>
+              <span>{showcase.brandName || theme.brandName}</span>
             </div>
             <p className="text-slate-400 leading-relaxed">
-              Il punto di riferimento per il grooming maschile e la rasatura tradizionale con panni caldi e prodotti esclusivi.
+              {contactInfo.brandClaim || "Il punto di riferimento per il grooming maschile e la rasatura tradizionale con panni caldi e prodotti esclusivi."}
             </p>
           </div>
 
@@ -34,14 +40,12 @@ export function PublicFooter({ config }: PublicFooterProps) {
           <div className="space-y-2">
             <h4 className="text-white font-bold uppercase tracking-wider text-[11px] flex items-center gap-1.5">
               <Clock className="w-3.5 h-3.5 text-amber-400" />
-              Orari di Apertura
+              {showcase.customLabels?.hoursTitle || "Orari di Apertura"}
             </h4>
-            <p className="text-slate-400">Lunedì: Chiuso</p>
-            <p className="text-slate-400">Martedì – Venerdì: 09:00 – 13:00 / 14:30 – 19:30</p>
-            <p className="text-slate-400">Sabato: 08:30 – 19:00 (Continuato)</p>
-            <p className="text-slate-400">Domenica: Chiuso</p>
+            <p className="text-slate-400">{contactInfo.hoursWeekday || "Martedì – Venerdì: 09:00 – 13:00 / 14:30 – 19:30"}</p>
+            <p className="text-slate-400">{contactInfo.hoursWeekend || "Sabato: 08:30 – 19:00 (Continuato)"}</p>
             <p className="text-amber-400 font-semibold pt-1">
-              Si riceve su appuntamento
+              {contactInfo.hoursNote || "Lunedì e Domenica: Chiuso • Si riceve su appuntamento"}
             </p>
           </div>
 
@@ -49,13 +53,22 @@ export function PublicFooter({ config }: PublicFooterProps) {
           <div className="space-y-2">
             <h4 className="text-white font-bold uppercase tracking-wider text-[11px] flex items-center gap-1.5">
               <MapPin className="w-3.5 h-3.5 text-amber-400" />
-              Dove Siamo
+              {showcase.customLabels?.contactTitle || "Dove Siamo"}
             </h4>
-            <p className="text-slate-400">Via Roma, 42 — Milano (MI)</p>
-            {contact?.phone && (
+            <p className="text-slate-400">{contactInfo.address || config.address || "Via Roma, 42 — Milano (MI)"}</p>
+            {contactInfo.addressNote && (
+              <p className="text-slate-500 text-[11px]">{contactInfo.addressNote}</p>
+            )}
+            {(contactInfo.phone || contact?.phone) && (
               <p className="text-slate-400 flex items-center gap-1 mt-1">
                 <Phone className="w-3 h-3 text-slate-500" />
-                <span>Tel / WhatsApp: {contact.phone}</span>
+                <span>Tel / WhatsApp: {contactInfo.phone || contact?.phone}</span>
+              </p>
+            )}
+            {(contactInfo.email || contact?.email) && (
+              <p className="text-slate-400 flex items-center gap-1 mt-0.5">
+                <Mail className="w-3 h-3 text-slate-500" />
+                <span>Email: {contactInfo.email || contact?.email}</span>
               </p>
             )}
           </div>
@@ -67,7 +80,7 @@ export function PublicFooter({ config }: PublicFooterProps) {
               Esperienza & Qualità
             </h4>
             <p className="text-slate-400 leading-relaxed">
-              Tagli su misura, cura della barba e rituali di benessere maschile realizzati con passione ed eccellenza artigianale.
+              {contactInfo.guaranteeText || "Tagli su misura, cura della barba e rituali di benessere maschile realizzati con passione ed eccellenza artigianale."}
             </p>
           </div>
         </div>
@@ -75,11 +88,10 @@ export function PublicFooter({ config }: PublicFooterProps) {
         {/* Bottom Bar con link discreto admin */}
         <div className="pt-6 flex flex-col sm:flex-row items-center justify-between text-[11px] text-slate-500 gap-3">
           <span>
-            © {new Date().getFullYear()} {theme.brandName} — Tutti i diritti riservati.
+            © {new Date().getFullYear()} {showcase.brandName || theme.brandName} — Tutti i diritti riservati.
           </span>
 
           <div className="flex items-center gap-4">
-            {/* Link Discreto per l'esercente */}
             <Link
               href="/admin"
               className="inline-flex items-center gap-1 text-slate-500 hover:text-amber-400 transition-colors px-2 py-1 rounded-md hover:bg-slate-800"
