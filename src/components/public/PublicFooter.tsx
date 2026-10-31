@@ -19,7 +19,7 @@ export function PublicFooter({ config }: PublicFooterProps) {
   return (
     <footer className="w-full bg-slate-900 text-slate-300 border-t border-slate-800 pt-12 pb-8 mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 pb-8 border-b border-slate-800 text-xs">
+        <div className={`grid grid-cols-1 ${showcase.sections?.showHours !== false ? "md:grid-cols-4" : "md:grid-cols-3"} gap-8 pb-8 border-b border-slate-800 text-xs`}>
           {/* Colonna 1: Brand */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-white font-extrabold text-base">
@@ -36,18 +36,20 @@ export function PublicFooter({ config }: PublicFooterProps) {
             </p>
           </div>
 
-          {/* Colonna 2: Orari */}
-          <div className="space-y-2">
-            <h4 className="text-white font-bold uppercase tracking-wider text-[11px] flex items-center gap-1.5">
-              <Clock className="w-3.5 h-3.5 text-amber-400" />
-              {showcase.customLabels?.hoursTitle || "Orari di Apertura"}
-            </h4>
-            <p className="text-slate-400">{contactInfo.hoursWeekday || "Martedì – Venerdì: 09:00 – 13:00 / 14:30 – 19:30"}</p>
-            <p className="text-slate-400">{contactInfo.hoursWeekend || "Sabato: 08:30 – 19:00 (Continuato)"}</p>
-            <p className="text-amber-400 font-semibold pt-1">
-              {contactInfo.hoursNote || "Lunedì e Domenica: Chiuso • Si riceve su appuntamento"}
-            </p>
-          </div>
+          {/* Colonna 2: Orari (Condizionale da showcase.sections.showHours) */}
+          {showcase.sections?.showHours !== false && (
+            <div className="space-y-2">
+              <h4 className="text-white font-bold uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                <Clock className="w-3.5 h-3.5 text-amber-400" />
+                {showcase.customLabels?.hoursTitle || "Orari di Apertura"}
+              </h4>
+              <p className="text-slate-400">{contactInfo.hoursWeekday || "Martedì – Venerdì: 09:00 – 13:00 / 14:30 – 19:30"}</p>
+              <p className="text-slate-400">{contactInfo.hoursWeekend || "Sabato: 08:30 – 19:00 (Continuato)"}</p>
+              <p className="text-amber-400 font-semibold pt-1">
+                {contactInfo.hoursNote || "Lunedì e Domenica: Chiuso • Si riceve su appuntamento"}
+              </p>
+            </div>
+          )}
 
           {/* Colonna 3: Indirizzo e Contatti */}
           <div className="space-y-2">
