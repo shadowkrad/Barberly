@@ -1,5 +1,14 @@
 ﻿# 🚀 Barberly — Release Notes
 
+## Novità della Versione 1.0.8 (Hotfix / Patch)
+
+### 1. 💈 Vetrina Bottega 100% Personalizzabile & Live Studio Completo
+- **Nuovo Pannello Orari & Bottega nello Studio**: Configurazione diretta di claim bottega, testo garanzia & qualità, orari feriali/weekend/chiusura, indirizzo e recapiti telefonici/email.
+- **Dinamizzazione Totale del Footer Pubblico (`PublicFooter.tsx`)**: Eliminazione definitiva di tutti i testi di esempio cablati (*Via Roma 42*, *orari fissi*); ora la vetrina riflette al 100% i dati impostati dall'esercente con fallback eleganti sui recapiti aziendali.
+- **Anteprima Live Aggiornata in Tempo Reale**: Lo Studio Vetrina mostra immediatamente nel footer mobile e desktop l'indirizzo, il telefono e gli orari aggiornati dell'attività.
+
+---
+
 ## Novità della Versione 1.0.7 (Hotfix / Patch)
 
 ### 1. 🔐 Autenticazione Distinta: Email + Password Titolare & PIN Staff Salone

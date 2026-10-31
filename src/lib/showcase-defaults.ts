@@ -10,6 +10,19 @@ export interface GalleryPhotoItem {
   caption?: string;
 }
 
+export interface ShowcaseContactInfo {
+  address?: string;
+  addressNote?: string;
+  phone?: string;
+  email?: string;
+  hoursWeekday?: string;
+  hoursWeekend?: string;
+  hoursNote?: string;
+  responseNote?: string;
+  brandClaim?: string;
+  guaranteeText?: string;
+}
+
 export interface ShowcaseConfig {
   brandName: string;
   primaryColor: string;
@@ -62,6 +75,9 @@ export interface ShowcaseConfig {
     showContact: boolean;
   };
 
+  // Informazioni di Contatto & Orari
+  contactInfo?: ShowcaseContactInfo;
+
   // Etichette Personalizzate
   customLabels: {
     servicesTitle: string;
@@ -72,6 +88,19 @@ export interface ShowcaseConfig {
     contactTitle: string;
   };
 }
+
+export const DEFAULT_BARBERLY_CONTACT_INFO: ShowcaseContactInfo = {
+  address: "Via Roma, 42 — Milano (MI)",
+  addressNote: "Parcheggio riservato clienti nelle vicinanze.",
+  phone: "+39 02 1234567",
+  email: "info@gentlemanbarber.it",
+  hoursWeekday: "Martedì – Venerdì: 09:00 – 13:00 / 14:30 – 19:30",
+  hoursWeekend: "Sabato: 08:30 – 19:00 (Continuato)",
+  hoursNote: "Lunedì e Domenica: Chiuso • Si riceve su appuntamento",
+  responseNote: "Rispondiamo rapidamente durante gli orari di apertura.",
+  brandClaim: "Il punto di riferimento per il grooming maschile e la rasatura tradizionale con panni caldi e prodotti esclusivi.",
+  guaranteeText: "Tagli su misura, cura della barba e rituali di benessere maschile realizzati con passione ed eccellenza artigianale.",
+};
 
 export const DEFAULT_BARBERLY_SHOWCASE_CONFIG: ShowcaseConfig = {
   brandName: "Gentleman Barber Club",
@@ -156,6 +185,7 @@ export const DEFAULT_BARBERLY_SHOWCASE_CONFIG: ShowcaseConfig = {
     hoursTitle: "Orari di Bottega",
     contactTitle: "Dove Trovarci & Contatti",
   },
+  contactInfo: DEFAULT_BARBERLY_CONTACT_INFO,
 };
 
 /**
@@ -192,6 +222,10 @@ export function parseShowcaseConfig(raw: string | null | undefined): ShowcaseCon
       sections: {
         ...DEFAULT_BARBERLY_SHOWCASE_CONFIG.sections,
         ...(parsed.sections || {}),
+      },
+      contactInfo: {
+        ...DEFAULT_BARBERLY_CONTACT_INFO,
+        ...(parsed.contactInfo || {}),
       },
       customLabels: {
         ...DEFAULT_BARBERLY_SHOWCASE_CONFIG.customLabels,

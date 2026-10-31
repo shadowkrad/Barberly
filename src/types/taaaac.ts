@@ -22,6 +22,8 @@ export interface TenantConfigResponse {
   licenseExpiresAt?: string;
   enabledModules: TaaaacModuleKey[];
   theme: TenantThemeConfig;
+  address?: string;
+  showcaseConfig?: any;
   contact?: {
     email?: string;
     phone?: string;
