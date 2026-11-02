@@ -565,6 +565,16 @@ export function BookingWizard({
                 <span>Invia promemoria WhatsApp al salone</span>
               </a>
             )}
+            {customerPhone && (
+              <a
+                href={`https://admin.taaaac.eu/api/telegram/connect?subdomain=${typeof window !== "undefined" ? window.location.hostname.split(".")[0] : ""}&phone=${encodeURIComponent(customerPhone)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="taaaac-btn-secondary text-xs text-sky-700 border-sky-200 hover:bg-sky-50 w-full sm:w-auto inline-flex items-center justify-center gap-1.5"
+              >
+                <span>✈️ Promemoria su Telegram</span>
+              </a>
+            )}
 
             <button
               type="button"
