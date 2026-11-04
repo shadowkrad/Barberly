@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { usePathname } from "next/navigation";
 import { formattaNumeroWhatsApp, generaLinkWhatsApp } from "@/lib/whatsapp";
 
 interface FloatingWhatsAppWidgetProps {
@@ -17,6 +18,16 @@ export default function FloatingWhatsAppWidget({
   className = "",
 }: FloatingWhatsAppWidgetProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const pathname = usePathname();
+
+  if (
+    pathname?.startsWith("/dashboard") ||
+    pathname?.startsWith("/admin") ||
+    pathname?.startsWith("/login") ||
+    pathname?.startsWith("/maintenance-login")
+  ) {
+    return null;
+  }
 
   if (!phone || phone.trim() === "") {
     return null;

@@ -2,7 +2,10 @@ import { prisma } from "./db";
 import { TenantConfigResponse, TaaaacModuleKey } from "@/types/taaaac";
 
 const FALLBACK_CONFIG: TenantConfigResponse = {
-  domain: process.env.TAAAAC_TENANT_DOMAIN || "barberly-demo.taaaac.eu",
+  domain:
+    process.env.TAAAAC_TENANT_DOMAIN ||
+    process.env.TAAAAC_DOMAIN ||
+    "barberly-demo.taaaac.eu",
   licenseStatus: "ATTIVO",
   licenseExpiresAt: "2027-12-31T23:59:59Z",
   enabledModules: [
@@ -30,8 +33,31 @@ const FALLBACK_CONFIG: TenantConfigResponse = {
  */
 export async function getTenantConfig(): Promise<TenantConfigResponse> {
   const coreUrl = process.env.TAAAAC_CORE_URL || "https://taaaac.eu";
-  const domain = process.env.TAAAAC_TENANT_DOMAIN || "barberly-demo.taaaac.eu";
-  const token = process.env.TAAAAC_TENANT_TOKEN || "demo-token-barberly";
+  const domain =
+    process.env.TAAAAC_TENANT_DOMAIN ||
+    process.env.TAAAAC_DOMAIN ||
+    "barberly-demo.taaaac.eu";
+  const token =
+    process.env.TAAAAC_TENANT_TOKEN ||
+    process.env.TAAAAC_TOKEN ||
+    "demo-token-barberly";
+
+  let cached: any = null;
+  try {
+    cached = await prisma.tenantLocalCache.findUnique({
+      where: { id: "singleton" },
+    });
+  } catch {}
+
+  let localShowcasePhone: string | undefined;
+  let localShowcaseEmail: string | undefined;
+  if (cached?.showcaseConfig) {
+    try {
+      const sc = JSON.parse(cached.showcaseConfig);
+      if (sc?.contactInfo?.phone?.trim()) localShowcasePhone = sc.contactInfo.phone.trim();
+      if (sc?.contactInfo?.email?.trim()) localShowcaseEmail = sc.contactInfo.email.trim();
+    } catch {}
+  }
 
   try {
     const endpoint = `${coreUrl}/api/public/tenant-config?domain=${encodeURIComponent(
@@ -39,60 +65,117 @@ export async function getTenantConfig(): Promise<TenantConfigResponse> {
     )}&token=${encodeURIComponent(token)}`;
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 4000); // 4s timeout
+    const timeoutId = setTimeout(() => controller.abort(), 4000);
 
     const res = await fetch(endpoint, {
       signal: controller.signal,
       headers: {
         Accept: "application/json",
       },
-      next: { revalidate: 300 }, // cache 5 min in Next.js
+      cache: "no-store",
     });
     clearTimeout(timeoutId);
 
     if (res.ok) {
-      const data: TenantConfigResponse = await res.json();
-      // Aggiorna cache locale asincronamente
-      await cacheTenantLocally(data);
-      return data;
-    }
-  } catch (err) {
-    console.warn("⚠️ Taaaac Core non raggiungibile o offline, utilizzo cache locale:", (err as Error).message);
-  }
+      const data = await res.json();
+      const tenantNode = data?.tenant || {};
+      const rawModules: string[] = Array.isArray(data?.enabledModules)
+        ? data.enabledModules
+        : Array.isArray(tenantNode?.moduliAttivi)
+        ? tenantNode.moduliAttivi
+        : FALLBACK_CONFIG.enabledModules;
 
-  // Prova a leggere dalla cache SQLite
-  try {
-    const cached = await prisma.tenantLocalCache.findUnique({
-      where: { id: "singleton" },
-    });
+      const mergedModules = Array.from(
+        new Set([
+          ...rawModules,
+          ...(tenantNode?.whatsappEnabled ? ["WHATSAPP", "WHATSAPP_REMINDERS"] : []),
+        ])
+      ) as TaaaacModuleKey[];
 
-    if (cached) {
-      let modules: TaaaacModuleKey[] = [];
-      try {
-        modules = JSON.parse(cached.enabledModules);
-      } catch {
-        modules = FALLBACK_CONFIG.enabledModules;
-      }
+      const resolvedPhone =
+        cached?.phone ||
+        localShowcasePhone ||
+        data?.contact?.phone ||
+        data?.phone ||
+        tenantNode?.whatsappDisplayNumber ||
+        FALLBACK_CONFIG.contact?.phone;
 
-      return {
-        domain: cached.domain,
-        licenseStatus: cached.licenseStatus as any,
-        enabledModules: modules,
+      const resolvedEmail =
+        cached?.contactEmail ||
+        localShowcaseEmail ||
+        data?.contact?.email ||
+        FALLBACK_CONFIG.contact?.email;
+
+      const normalized: TenantConfigResponse = {
+        domain:
+          data?.domain ||
+          (tenantNode?.sottodominio
+            ? `${tenantNode.sottodominio}.taaaac.eu`
+            : domain),
+        licenseStatus: (data?.licenseStatus || tenantNode?.stato || "ATTIVO") as any,
+        licenseExpiresAt:
+          data?.licenseExpiresAt ||
+          tenantNode?.dataScadenza ||
+          FALLBACK_CONFIG.licenseExpiresAt,
+        enabledModules: mergedModules,
         theme: {
-          brandName: cached.brandName,
-          primaryColor: cached.primaryColor,
-          accentColor: cached.accentColor,
-          logoUrl: cached.logoUrl,
-          faviconUrl: cached.faviconUrl,
+          brandName:
+            cached?.brandName ||
+            data?.theme?.brandName ||
+            tenantNode?.nomeAttivita ||
+            FALLBACK_CONFIG.theme.brandName,
+          primaryColor:
+            cached?.primaryColor ||
+            data?.theme?.primaryColor ||
+            FALLBACK_CONFIG.theme.primaryColor,
+          accentColor:
+            cached?.accentColor ||
+            data?.theme?.accentColor ||
+            FALLBACK_CONFIG.theme.accentColor,
+          logoUrl: cached?.logoUrl || data?.theme?.logoUrl || null,
+          faviconUrl: cached?.faviconUrl || data?.theme?.faviconUrl || null,
         },
         contact: {
-          email: cached.contactEmail || undefined,
-          phone: cached.phone || undefined,
+          email: resolvedEmail,
+          phone: resolvedPhone,
         },
       };
+
+      await cacheTenantLocally(normalized);
+      return normalized;
     }
-  } catch (dbErr) {
-    console.error("Errore lettura cache SQLite:", dbErr);
+  } catch (err) {
+    console.warn(
+      "⚠️ Taaaac Core non raggiungibile o offline, utilizzo cache locale:",
+      (err as Error).message
+    );
+  }
+
+  // Fallback su cache SQLite
+  if (cached) {
+    let modules: TaaaacModuleKey[] = [];
+    try {
+      modules = JSON.parse(cached.enabledModules);
+    } catch {
+      modules = FALLBACK_CONFIG.enabledModules;
+    }
+
+    return {
+      domain: cached.domain,
+      licenseStatus: cached.licenseStatus as any,
+      enabledModules: modules,
+      theme: {
+        brandName: cached.brandName,
+        primaryColor: cached.primaryColor,
+        accentColor: cached.accentColor,
+        logoUrl: cached.logoUrl,
+        faviconUrl: cached.faviconUrl,
+      },
+      contact: {
+        email: cached.contactEmail || localShowcaseEmail || FALLBACK_CONFIG.contact?.email,
+        phone: cached.phone || localShowcasePhone || FALLBACK_CONFIG.contact?.phone,
+      },
+    };
   }
 
   return FALLBACK_CONFIG;
