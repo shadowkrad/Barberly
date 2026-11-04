@@ -568,7 +568,15 @@ export default function BarberlyImpostazioniPage() {
             <input
               type="checkbox"
               checked={form.whatsappAbilitato}
-              onChange={(e) => setForm({ ...form, whatsappAbilitato: e.target.checked })}
+              onChange={(e) => {
+                const nextVal = e.target.checked;
+                setForm({ ...form, whatsappAbilitato: nextVal });
+                fetch("/api/impostazioni", {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ whatsappAbilitato: nextVal }),
+                }).catch(() => {});
+              }}
               className="w-5 h-5 accent-amber-500 rounded cursor-pointer"
             />
           </div>
@@ -579,6 +587,48 @@ export default function BarberlyImpostazioniPage() {
               Ciao &#123;&#123;nome_cliente&#125;&#125;! Ti ricordiamo il tuo appuntamento per &#123;&#123;servizio&#125;&#125; da Gentleman Barber Club oggi alle &#123;&#123;orario&#125;&#125;. Per gestire la prenotazione: &#123;&#123;link_appuntamento&#125;&#125;
             </div>
           </div>
+        </div>
+      )}
+
+      {/* TAB: TELEGRAM HUB & STAFF */}
+      {activeTab === "telegram" && (
+        <div className="space-y-6">
+          <TelegramSettingsPanel
+            data={telegramSettings}
+            onChange={(updated) => {
+              const toggled = updated.enabled !== telegramSettings.enabled;
+              setTelegramSettings(updated);
+              if (toggled) {
+                fetch("/api/impostazioni", {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ telegramSettings: updated }),
+                }).catch(() => {});
+              }
+            }}
+          />
+        </div>
+      )}
+
+      {/* TAB: FIDELITY & PUNTI */}
+      {activeTab === "fidelity" && (
+        <div className="space-y-6">
+          <FidelitySettingsPanel
+            data={fidelitySettings}
+            onChange={(updated) => {
+              const toggled =
+                updated.enabled !== fidelitySettings.enabled ||
+                (updated.rewards?.length || 0) !== (fidelitySettings.rewards?.length || 0);
+              setFidelitySettings(updated);
+              if (toggled) {
+                fetch("/api/impostazioni", {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ fidelitySettings: updated }),
+                }).catch(() => {});
+              }
+            }}
+          />
         </div>
       )}
 
