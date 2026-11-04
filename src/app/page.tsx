@@ -421,12 +421,6 @@ export default async function PublicHomePage() {
 
       {/* Footer con link discreto per l'esercente */}
       <PublicFooter config={config} />
-
-      {/* Widget Flottante WhatsApp Vetrina */}
-      <FloatingWhatsAppWidget
-        phone={config.contact?.phone}
-        brandName={config.theme.brandName || "Barberly Studio"}
-      />
     </div>
   );
 }
