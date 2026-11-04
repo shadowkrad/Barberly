@@ -1,6 +1,9 @@
+import FloatingWhatsAppWidget from "@/components/public/FloatingWhatsAppWidget";
 import type { Metadata } from "next";
 import "./globals.css";
 import { getTenantConfig } from "@/lib/taaaac-core";
+
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   const config = await getTenantConfig();
@@ -40,6 +43,12 @@ export default async function RootLayout({
 }>) {
   const config = await getTenantConfig();
 
+  const hasWhatsAppModule =
+    Array.isArray(config.enabledModules) &&
+    config.enabledModules.some((m) => String(m).toUpperCase().includes("WHATSAPP"));
+
+  const waPhone = config.contact?.phone || "+39 02 8901 2345";
+
   // Iniezione variabili CSS semantiche per il brand dinamico Taaaac
   const dynamicCssVariables = `
     :root {
@@ -58,6 +67,12 @@ export default async function RootLayout({
       </head>
       <body className="min-h-screen bg-slate-50 flex flex-col antialiased selection:bg-amber-100 selection:text-amber-900">
         {children}
+        {hasWhatsAppModule && (
+          <FloatingWhatsAppWidget
+            phone={waPhone}
+            brandName={config.theme.brandName || "Barberly Studio"}
+          />
+        )}
       </body>
     </html>
   );

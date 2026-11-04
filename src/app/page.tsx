@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PublicHeader } from "@/components/public/PublicHeader";
 import { PublicFooter } from "@/components/public/PublicFooter";
+import FloatingWhatsAppWidget from "@/components/public/FloatingWhatsAppWidget";
 import { getTenantConfig } from "@/lib/taaaac-core";
 import { prisma, ensureDatabase } from "@/lib/db";
 import { parseShowcaseConfig } from "@/lib/showcase-defaults";
