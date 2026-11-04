@@ -1,6 +1,25 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, ensureDatabase } from "@/lib/db";
 import { parseShowcaseConfig, DEFAULT_BARBERLY_SHOWCASE_CONFIG } from "@/lib/showcase-defaults";
+import { fetchTenantConfig } from "@/lib/taaaac-client";
+
+/**
+ * Telegram è gestito da Taaaac Core: qui si legge solo lo stato (mai token né chat ID).
+ */
+async function getTelegramHub() {
+  try {
+    const cfg = await fetchTenantConfig();
+    return {
+      managedByCore: true,
+      enabled: Boolean(cfg.telegramEnabled),
+      botUsername: cfg.telegramBotUsername || "",
+      staffAlerts: cfg.telegramAutoConfirm !== false,
+      reminder24h: cfg.telegramAutoReminder24h !== false,
+    };
+  } catch {
+    return { managedByCore: true, enabled: false, botUsername: "", staffAlerts: true, reminder24h: true };
+  }
+}
 
 export async function GET() {
   await ensureDatabase();
@@ -28,12 +47,7 @@ export async function GET() {
         contactEmail: config.contactEmail,
         phone: config.phone,
         showcaseConfig: parseShowcaseConfig(config.showcaseConfig),
-        telegramSettings: {
-          enabled: Boolean(config.telegramEnabled),
-          botToken: config.telegramBotToken || "",
-          botUsername: config.telegramBotUsername || "",
-          staffChatId: config.telegramStaffChatId || "",
-        },
+        telegramHub: await getTelegramHub(),
         fidelitySettings: {
           enabled: Boolean(config.fidelityEnabled),
           pointsPerEuro: fidelityRules?.pointsPerEuro || 1,
@@ -57,12 +71,7 @@ export async function GET() {
       contactEmail: "info@barberly.taaaac.eu",
       phone: "+39 02 8901 2345",
       showcaseConfig: DEFAULT_BARBERLY_SHOWCASE_CONFIG,
-      telegramSettings: {
-        enabled: false,
-        botToken: "",
-        botUsername: "",
-        staffChatId: "",
-      },
+      telegramHub: await getTelegramHub(),
       fidelitySettings: {
         enabled: false,
         pointsPerEuro: 1,
@@ -81,7 +90,7 @@ export async function PUT(req: NextRequest) {
   await ensureDatabase();
   try {
     const body = await req.json();
-    const { brandName, logoUrl, faviconUrl, primaryColor, accentColor, contactEmail, phone, showcaseConfig, telegramSettings, fidelitySettings } = body;
+    const { brandName, logoUrl, faviconUrl, primaryColor, accentColor, contactEmail, phone, showcaseConfig, fidelitySettings } = body;
 
     const showcaseConfigStr =
       showcaseConfig !== undefined
@@ -101,10 +110,6 @@ export async function PUT(req: NextRequest) {
         ...(contactEmail !== undefined && { contactEmail }),
         ...(phone !== undefined && { phone }),
         ...(showcaseConfigStr !== undefined && { showcaseConfig: showcaseConfigStr }),
-        ...(telegramSettings?.enabled !== undefined && { telegramEnabled: Boolean(telegramSettings.enabled) }),
-        ...(telegramSettings?.botToken !== undefined && { telegramBotToken: telegramSettings.botToken }),
-        ...(telegramSettings?.botUsername !== undefined && { telegramBotUsername: telegramSettings.botUsername }),
-        ...(telegramSettings?.staffChatId !== undefined && { telegramStaffChatId: telegramSettings.staffChatId }),
         ...(fidelitySettings?.enabled !== undefined && { fidelityEnabled: Boolean(fidelitySettings.enabled) }),
         ...(fidelitySettings !== undefined && { fidelityRules: JSON.stringify(fidelitySettings) }),
         lastSyncedAt: new Date(),
@@ -122,10 +127,6 @@ export async function PUT(req: NextRequest) {
         contactEmail: contactEmail || "info@barberly.taaaac.eu",
         phone: phone || "+39 02 8901 2345",
         showcaseConfig: showcaseConfigStr || "{}",
-        telegramEnabled: Boolean(telegramSettings?.enabled),
-        telegramBotToken: telegramSettings?.botToken || null,
-        telegramBotUsername: telegramSettings?.botUsername || null,
-        telegramStaffChatId: telegramSettings?.staffChatId || null,
         fidelityEnabled: Boolean(fidelitySettings?.enabled),
         fidelityRules: fidelitySettings ? JSON.stringify(fidelitySettings) : "{}",
         lastSyncedAt: new Date(),

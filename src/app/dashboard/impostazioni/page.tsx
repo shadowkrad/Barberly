@@ -24,7 +24,7 @@ import {
 import EmailSettingsCard from "@/components/dashboard/EmailSettingsCard";
 import RegisteredDevicesCard from "@/components/dashboard/RegisteredDevicesCard";
 import ShowcaseVisualStudio from "@/components/dashboard/showcase/ShowcaseVisualStudio";
-import TelegramSettingsPanel, { TelegramSettingsData } from "@/components/dashboard/TelegramSettingsPanel";
+import TelegramHubCard, { TelegramHubData } from "@/components/dashboard/TelegramHubCard";
 import FidelitySettingsPanel, { FidelitySettingsData } from "@/components/dashboard/FidelitySettingsPanel";
 import { Send, Award } from "lucide-react";
 
@@ -111,12 +111,7 @@ export default function BarberlyImpostazioniPage() {
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
   // Telegram & Fidelity State
-  const [telegramSettings, setTelegramSettings] = useState<TelegramSettingsData>({
-    enabled: false,
-    botToken: "",
-    botUsername: "",
-    staffChatId: "",
-  });
+  const [telegramHub, setTelegramHub] = useState<TelegramHubData | null>(null);
 
   const [fidelitySettings, setFidelitySettings] = useState<FidelitySettingsData>({
     enabled: false,
@@ -167,7 +162,7 @@ export default function BarberlyImpostazioniPage() {
             emailBottega: data.contactEmail || f.emailBottega,
             telefono: data.phone || f.telefono,
           }));
-          if (data.telegramSettings) setTelegramSettings(data.telegramSettings);
+          if (data?.telegramHub) setTelegramHub(data.telegramHub);
           if (data.fidelitySettings) setFidelitySettings(data.fidelitySettings);
         }
       })
@@ -242,7 +237,6 @@ export default function BarberlyImpostazioniPage() {
           accentColor: form.coloreAccento,
           contactEmail: form.emailBottega,
           phone: form.telefono,
-          telegramSettings,
           fidelitySettings,
         }),
       });
@@ -593,20 +587,7 @@ export default function BarberlyImpostazioniPage() {
       {/* TAB: TELEGRAM HUB & STAFF */}
       {activeTab === "telegram" && (
         <div className="space-y-6">
-          <TelegramSettingsPanel
-            data={telegramSettings}
-            onChange={(updated) => {
-              const toggled = updated.enabled !== telegramSettings.enabled;
-              setTelegramSettings(updated);
-              if (toggled) {
-                fetch("/api/impostazioni", {
-                  method: "PUT",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ telegramSettings: updated }),
-                }).catch(() => {});
-              }
-            }}
-          />
+          <TelegramHubCard hub={telegramHub} />
         </div>
       )}
 
