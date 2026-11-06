@@ -24,7 +24,7 @@ import {
 import EmailSettingsCard from "@/components/dashboard/EmailSettingsCard";
 import RegisteredDevicesCard from "@/components/dashboard/RegisteredDevicesCard";
 import ShowcaseVisualStudio from "@/components/dashboard/showcase/ShowcaseVisualStudio";
-import TelegramSettingsPanel, { TelegramSettingsData } from "@/components/dashboard/TelegramSettingsPanel";
+import TelegramHubCard, { TelegramHubData } from "@/components/dashboard/TelegramHubCard";
 import FidelitySettingsPanel, { FidelitySettingsData } from "@/components/dashboard/FidelitySettingsPanel";
 import { Send, Award } from "lucide-react";
 
@@ -111,12 +111,7 @@ export default function BarberlyImpostazioniPage() {
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
   // Telegram & Fidelity State
-  const [telegramSettings, setTelegramSettings] = useState<TelegramSettingsData>({
-    enabled: false,
-    botToken: "",
-    botUsername: "",
-    staffChatId: "",
-  });
+  const [telegramHub, setTelegramHub] = useState<TelegramHubData | null>(null);
 
   const [fidelitySettings, setFidelitySettings] = useState<FidelitySettingsData>({
     enabled: false,
@@ -167,7 +162,7 @@ export default function BarberlyImpostazioniPage() {
             emailBottega: data.contactEmail || f.emailBottega,
             telefono: data.phone || f.telefono,
           }));
-          if (data.telegramSettings) setTelegramSettings(data.telegramSettings);
+          if (data?.telegramHub) setTelegramHub(data.telegramHub);
           if (data.fidelitySettings) setFidelitySettings(data.fidelitySettings);
         }
       })
@@ -242,7 +237,6 @@ export default function BarberlyImpostazioniPage() {
           accentColor: form.coloreAccento,
           contactEmail: form.emailBottega,
           phone: form.telefono,
-          telegramSettings,
           fidelitySettings,
         }),
       });
@@ -568,7 +562,15 @@ export default function BarberlyImpostazioniPage() {
             <input
               type="checkbox"
               checked={form.whatsappAbilitato}
-              onChange={(e) => setForm({ ...form, whatsappAbilitato: e.target.checked })}
+              onChange={(e) => {
+                const nextVal = e.target.checked;
+                setForm({ ...form, whatsappAbilitato: nextVal });
+                fetch("/api/impostazioni", {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ whatsappAbilitato: nextVal }),
+                }).catch(() => {});
+              }}
               className="w-5 h-5 accent-amber-500 rounded cursor-pointer"
             />
           </div>
@@ -579,6 +581,36 @@ export default function BarberlyImpostazioniPage() {
               Ciao &#123;&#123;nome_cliente&#125;&#125;! Ti ricordiamo il tuo appuntamento per &#123;&#123;servizio&#125;&#125; da Gentleman Barber Club oggi alle &#123;&#123;orario&#125;&#125;. Per gestire la prenotazione: &#123;&#123;link_appuntamento&#125;&#125;
             </div>
           </div>
+        </div>
+      )}
+
+      {/* TAB: TELEGRAM HUB & STAFF */}
+      {activeTab === "telegram" && (
+        <div className="space-y-6">
+          <TelegramHubCard hub={telegramHub} />
+        </div>
+      )}
+
+      {/* TAB: FIDELITY & PUNTI */}
+      {activeTab === "fidelity" && (
+        <div className="space-y-6">
+          <FidelitySettingsPanel
+            data={fidelitySettings}
+            onChange={(updated) => {
+              const toggled =
+                updated.enabled !== fidelitySettings.enabled ||
+                Boolean(updated.compleanno?.enabled) !== Boolean(fidelitySettings.compleanno?.enabled) ||
+                (updated.rewards?.length || 0) !== (fidelitySettings.rewards?.length || 0);
+              setFidelitySettings(updated);
+              if (toggled) {
+                fetch("/api/impostazioni", {
+                  method: "PUT",
+                  headers: { "Content-Type": "application/json" },
+                  body: JSON.stringify({ fidelitySettings: updated }),
+                }).catch(() => {});
+              }
+            }}
+          />
         </div>
       )}
 

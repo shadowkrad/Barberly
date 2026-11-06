@@ -1,6 +1,41 @@
 ﻿# 💈 Barberly — Release Notes
 
-## Novità della Versione 1.1.0 (In Sviluppo)
+## Novità della Versione 1.1.2 (Patch)
+
+### 1. 👤 Scheda Cliente Rinnovata
+- **Un numero, un cliente**: se il telefono esiste già (anche scritto con spazi o +39) il gestionale lo segnala e propone di aprire la scheda esistente, in creazione, in modifica, nelle prenotazioni online e nei nuovi appuntamenti.
+- **Cellulare o fisso**: i numeri fissi (es. 0575) restano ammessi ma non ricevono WhatsApp né messaggi automatici; per loro conta l'email o l'avviso a voce.
+- **Data di nascita** facoltativa e **consenso promozionale**, base per il buono compleanno.
+- **Scheda ordinata**: anagrafica, punti con ultimi movimenti, buoni attivi e storico visite nello stesso posto. Il saldo punti non si modifica più a mano: ogni variazione resta registrata.
+- **Anonimizzazione GDPR** più pulita: telefono, data di nascita e link della tessera vengono azzerati.
+
+### 2. 🎟️ Fedeltà a Punti Vera
+- **Punti automatici**: a servizio completato il cliente guadagna i punti della spesa (regola scelta dal titolare), senza doppi accrediti e con storno se l'appuntamento viene riaperto. I punti finti assegnati alla prenotazione online sono stati tolti.
+- **Cassa fedeltà**: cerca il cliente per telefono, nome o link della tessera, accredita la spesa e riscatta i premi. Premi scelti dal titolare.
+- **Tessera digitale**: link privato (con QR) con logo e colori della barberia, punti, premi e ultimi movimenti; aggiungibile alla schermata Home del telefono con il logo come icona.
+- **Storico completo** di ogni movimento (origine, importo, saldo dopo, operatore).
+
+### 3. 🎁 Buoni Completi, Invio e Stampa
+- **Un buono per ogni motivo**: regalo, sconto, compensazione, gesto commerciale, premio punti, compleanno, promozione. Valore in euro, percentuale o servizio in omaggio; scadenza facoltativa; spesa minima; uso in più volte o unico.
+- **Cassa con anteprima** dello sconto, annullo con motivo e movimenti registrati.
+- **Email** (di default, dal servizio Taaaac), **WhatsApp a scelta dell'esercente** (mai in automatico, mai verso i fissi), pagina del buono con QR, **stampa A4 o ricevuta da 80 mm** e ristampa con lo stesso codice.
+
+### 4. 🎂 Compleanno e Premi che Diventano Buoni
+- **Buono compleanno automatico**, una volta per cliente e per anno, con email solo a chi ha dato il consenso. Il controllo parte quando si apre la pagina Buoni o dall'indirizzo `/api/cron/compleanni`.
+- **Premio punti → buono**: riscattando un premio si scalano i punti e nasce un buono intestato al cliente, nella stessa operazione.
+
+---
+
+## Novità della Versione 1.1.1 (Patch)
+
+### 1. ✈️ Telegram Gestito da Taaaac Core (Hub Centralizzato)
+- **Un solo posto per configurare Telegram**: il pannello Telegram locale è sostituito da una scheda di sola lettura (stato, bot, avvisi attivi) con il link al portale Taaaac, da cui si attiva o disattiva il canale.
+- **Nessun token nel modulo**: token del bot e chat ID non vengono più inseriti né salvati nelle impostazioni del modulo, e il test non passa più dal browser.
+- **Stato letto dal Core**: la scheda legge `telegram*` da `/api/public/tenant-config` (mai token né chat ID).
+
+---
+
+## Novità della Versione 1.1.0
 
 ### 1. 💬 Integrazione WhatsApp a 360° (Client Gratuito 1-Click & Connessione Taaaac Hub)
 - **Floating WhatsApp Widget sulla Vetrina Barber Shop**: Aggiunto il pulsante galleggiante WhatsApp ufficiale in basso a destra per permettere a clienti e passanti di chattare subito con la bottega con un tap.
@@ -19,6 +54,19 @@ oreply@taaaac.eu senza intaccare le quote WhatsApp.
 - **Routing Intelligente Reputazione**:
   - **4 e 5 Stelle (Taglio Perfetto)**: Reindirizzano il cliente alla scheda Google Maps per rilasciare subito una recensione a 5 stelle.
   - **1, 2 e 3 Stelle (Customer Care)**: Reindirizzano al modulo di feedback privato interno (/feedback) permettendo al barbiere di ricontattare il cliente e correggere il servizio prima di danni alla reputazione pubblica.
+
+---
+
+## Novità della Versione 1.0.10 (Hotfix / Patch)
+
+### 1. 💬 Pallino WhatsApp Unificato (Attivazione da Taaaac Core)
+- **`FloatingWhatsAppWidget` allineato su tutta la flotta**: il pulsante galleggiante compare sulle pagine pubbliche solo se il modulo WhatsApp è attivo nella configurazione del tenant (`/api/public/tenant-config` di Taaaac Core).
+- **Nascosto nelle aree gestionali**: non appare in `/dashboard`, `/admin` e `/login`.
+- **Risposta del Core normalizzata**: lettura uniforme dei campi del tenant-config.
+
+### 2. ⚙️ Pannelli Telegram/Fidelity Visibili & Salvataggio Istantaneo dei Toggle
+- **Auto-save**: in `/dashboard/impostazioni` ogni interruttore salva subito nel database e aggiorna la vista, senza un secondo pulsante "Salva".
+- **Pannelli dedicati**: i pannelli Telegram Hub e Fidelity sono ora sempre raggiungibili dalle impostazioni.
 
 ---
 
@@ -125,27 +173,6 @@ oreply@taaaac.eu senza intaccare le quote WhatsApp.
    - **Su iPhone (iOS / Safari)**: tocca l'icona di condivisione in basso al centro (il quadrato con la freccia verso l'alto ⬆️), scorri il menu verso il basso e tocca **"Aggiungi alla schermata Home"**, quindi conferma con **"Aggiungi"** in alto a destra.
    - **Su Android (Chrome)**: tocca il menu con i tre puntini in alto a destra (⋮), seleziona **"Aggiungi a schermata Home"** (o **"Installa applicazione"**), e conferma con **"Aggiungi"**.
 4. **Fatto!** L'icona sulla schermata Home del tuo smartphone sarà ora perfettamente nitida, con la grafica dedicata o con il logo del tuo brand.
-
----
-
-## Novità della Versione 1.1.0 (In Sviluppo)
-
-### 1. 💬 Integrazione WhatsApp a 360° (Client Gratuito 1-Click & Connessione Taaaac Hub)
-- **Floating WhatsApp Widget sulla Vetrina Barber Shop**: Aggiunto il pulsante galleggiante WhatsApp ufficiale in basso a destra per permettere a clienti e passanti di chattare subito con la bottega con un tap.
-- **Perfezionamento Grafico Bollino WhatsApp Ufficiale**: integrato il tracciato vettoriale ufficiale Meta WhatsApp (fumetto solido bianco puro `#FFFFFF` ad alta definizione con cornetta verde `#25D366` in risalto), eliminando il vecchio bordo vuoto wireframe e garantendo la massima nitidezza visiva su tutti i dispositivi.
-- **Client WhatsApp Standardizzato (`@/lib/whatsapp-client` & `@/lib/whatsapp-server`)**: Collegamento trasparente al micro-servizio centralizzato di Taaaac Core per le notifiche cloud, preservando l'apertura rapida `wa.me` a costo zero dal browser.
-- **Normalizzazione Cellulari Italiani**: Gestione automatica del prefisso internazionale `39` per tutti i contatti cliente.
-
-### 2. 🌐 Hub Sincronizzazione Omnicanale (Google Maps, Meta Facebook & IG, WhatsApp Business)
-- **Aggiornamento All'Unisono con 1 Click**: Modificando gli orari ordinari o di riposo della bottega in *Dashboard > Orari*, il pulsante `🚀 Salva e Sincronizza su Google & Canali` aggiorna simultaneamente la scheda Google Business Profile (Maps & Ricerca), le Pagine Meta (Facebook & Instagram) e il profilo WhatsApp Business del barbiere.
-- **Badge di Stato Canali in Tempo Reale**: Nuova scheda visiva nella dashboard orari con indicatori live dello stato di connessione e sincronizzazione per Google Maps, Meta, WhatsApp Business e Google Review Booster.
-- **Architettura Centralizzata Taaaac Core**: Comunicazione sicura e centralizzata con i connettori API esterni gestiti da Taaaac Core.
-
-### 3. ⭐ Google Review Booster Automatico via Email (5 Stelle Intelligenti)
-- **Email Post-Taglio/Barba Automatica a Costo Zero**: Quando un appuntamento del salone viene segnato come `COMPLETED`, il sistema invia in automatico un'email di ringraziamento elegante con 5 stelle interattive da `noreply@taaaac.eu` senza intaccare le quote WhatsApp.
-- **Routing Intelligente Reputazione**:
-  - **4 e 5 Stelle (Taglio Perfetto)**: Reindirizzano il cliente alla scheda Google Maps per rilasciare subito una recensione a 5 stelle.
-  - **1, 2 e 3 Stelle (Customer Care)**: Reindirizzano al modulo di feedback privato interno (`/feedback`) permettendo al barbiere di ricontattare il cliente e correggere il servizio prima di danni alla reputazione pubblica.
 
 ---
 

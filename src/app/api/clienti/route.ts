@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cercaClientePerTelefono } from "@/lib/clienti-telefono";
 import { prisma, ensureDatabase } from "@/lib/db";
 import { isAdminAuthenticated } from "@/lib/auth";
+import { normalizePhone, getPhoneSearchConditions, parseDataNascita } from "@/lib/phone";
 
 export async function GET(req: NextRequest) {
   try {
@@ -54,6 +56,7 @@ export async function GET(req: NextRequest) {
       email: c.email || "",
       note: c.notes || "",
       puntiFedelta: c.loyaltyPoints,
+      dataNascita: c.birthDate ? c.birthDate.toISOString() : null,
       consensoPrivacy: c.privacyConsent,
       dataUltimaVisita: c.appointments[0]?.date ? c.appointments[0].date.toISOString() : null,
       _count: { appuntamenti: c._count.appointments },
@@ -75,7 +78,7 @@ export async function POST(req: NextRequest) {
 
     await ensureDatabase();
     const body = await req.json();
-    const { nome, cognome, telefono, email, note, consensoPrivacy } = body;
+    const { nome, cognome, telefono, email, note, consensoPrivacy, consensoMarketing, dataNascita } = body;
 
     if (!nome?.trim() || !cognome?.trim() || !telefono?.trim()) {
       return NextResponse.json(
@@ -84,11 +87,31 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Un numero, un cliente: se il telefono esiste gia' si rimanda alla scheda esistente
+    const telNorm = normalizePhone(telefono);
+    const esistente = await cercaClientePerTelefono(telefono);
+    if (esistente) {
+      return NextResponse.json(
+        {
+          error: `Questo numero è già registrato per ${esistente.firstName} ${esistente.lastName}`.trim(),
+          clienteEsistente: { id: esistente.id, nome: esistente.firstName, cognome: esistente.lastName, telefono: esistente.phone },
+        },
+        { status: 409 }
+      );
+    }
+
+    const nascita = parseDataNascita(dataNascita);
+    if (dataNascita && !nascita) {
+      return NextResponse.json({ error: "Data di nascita non valida" }, { status: 400 });
+    }
+
     const client = await prisma.client.create({
       data: {
         firstName: nome.trim(),
         lastName: cognome.trim(),
-        phone: telefono.trim(),
+        phone: telNorm || telefono.trim(),
+        birthDate: nascita,
+        marketingConsent: consensoMarketing !== undefined ? Boolean(consensoMarketing) : false,
         email: email?.trim() || null,
         notes: note?.trim() || null,
         privacyConsent: consensoPrivacy !== undefined ? Boolean(consensoPrivacy) : true,
