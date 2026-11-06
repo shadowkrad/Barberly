@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Users, Phone, Mail, Award, Scissors, Search, Plus, ExternalLink, ShieldCheck, MessageCircle } from "lucide-react";
 import { generaLinkWhatsApp } from "@/lib/whatsapp";
+import { classificaTelefono, ETICHETTA_TELEFONO } from "@/lib/phone";
 
 interface ClienteItem {
   id: string;
@@ -32,9 +33,13 @@ export default function BarberlyClientiPage() {
     cognome: "",
     email: "",
     telefono: "",
+    dataNascita: "",
     note: "",
     consensoPrivacy: true,
+    consensoMarketing: false,
   });
+  const [erroreModulo, setErroreModulo] = useState<string | null>(null);
+  const [clienteDuplicatoId, setClienteDuplicatoId] = useState<string | null>(null);
 
   const fetchClienti = useCallback(async () => {
     setLoading(true);
@@ -65,6 +70,8 @@ export default function BarberlyClientiPage() {
   const handleCreaCliente = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    setErroreModulo(null);
+    setClienteDuplicatoId(null);
     try {
       const res = await fetch("/api/clienti", {
         method: "POST",
@@ -78,16 +85,19 @@ export default function BarberlyClientiPage() {
           cognome: "",
           email: "",
           telefono: "",
+          dataNascita: "",
           note: "",
           consensoPrivacy: true,
+          consensoMarketing: false,
         });
         fetchClienti();
       } else {
         const err = await res.json();
-        alert(err.error || "Errore nella creazione del cliente");
+        setErroreModulo(err.error || "Errore nella creazione del cliente");
+        setClienteDuplicatoId(res.status === 409 ? err.clienteEsistente?.id || null : null);
       }
     } catch (e: any) {
-      alert("Errore di connessione: " + (e?.message || ""));
+      setErroreModulo("Errore di connessione: " + (e?.message || ""));
     } finally {
       setSaving(false);
     }
@@ -168,6 +178,11 @@ export default function BarberlyClientiPage() {
                         <div className="text-xs text-slate-300 font-mono mt-0.5 flex items-center gap-1.5">
                           <Phone className="w-3 h-3 text-amber-500" />
                           <span>{c.telefono}</span>
+                          {classificaTelefono(c.telefono) === "FISSO" && (
+                            <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-amber-500/15 text-amber-400 border border-amber-500/30 font-sans font-semibold">
+                              {ETICHETTA_TELEFONO.FISSO}
+                            </span>
+                          )}
                         </div>
                         {c.email && (
                           <div className="text-[11px] text-slate-400 truncate max-w-[200px] mt-0.5 flex items-center gap-1">
@@ -395,6 +410,25 @@ export default function BarberlyClientiPage() {
               </div>
 
               <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-[11px] font-bold uppercase text-slate-400">Data di nascita (opzionale)</label>
+                  <span className="text-[10px] text-slate-500">Per il buono compleanno</span>
+                </div>
+                <input
+                  type="date"
+                  max={new Date().toISOString().slice(0, 10)}
+                  value={nuovoCliente.dataNascita}
+                  onChange={(e) => setNuovoCliente({ ...nuovoCliente, dataNascita: e.target.value })}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white focus:outline-none focus:border-amber-500"
+                />
+                {classificaTelefono(nuovoCliente.telefono) === "FISSO" && (
+                  <p className="text-[11px] text-amber-400 mt-1.5">
+                    Telefono fisso: non riceve WhatsApp o messaggi. Se puoi, aggiungi anche l&apos;email.
+                  </p>
+                )}
+              </div>
+
+              <div>
                 <label className="text-[11px] font-bold uppercase text-slate-400 block mb-1">
                   Note Stile (Taglio, Barba, Preferenze)
                 </label>
@@ -419,6 +453,27 @@ export default function BarberlyClientiPage() {
                   className="w-4 h-4 accent-amber-500 rounded"
                 />
               </div>
+
+              <div className="p-3 bg-slate-950/80 rounded-xl border border-slate-800 flex items-center justify-between">
+                <span className="text-xs text-slate-300">Consenso a comunicazioni promozionali (es. buono compleanno)</span>
+                <input
+                  type="checkbox"
+                  checked={nuovoCliente.consensoMarketing}
+                  onChange={(e) => setNuovoCliente({ ...nuovoCliente, consensoMarketing: e.target.checked })}
+                  className="w-4 h-4 accent-amber-500 rounded"
+                />
+              </div>
+
+              {erroreModulo && (
+                <div className="p-2.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-300 text-xs font-semibold">
+                  {erroreModulo}{" "}
+                  {clienteDuplicatoId && (
+                    <Link href={`/dashboard/clienti/${clienteDuplicatoId}`} className="underline text-amber-400">
+                      Apri la scheda esistente →
+                    </Link>
+                  )}
+                </div>
+              )}
 
               <div className="flex justify-end gap-2 pt-2 border-t border-slate-800">
                 <button

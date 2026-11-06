@@ -1,4 +1,6 @@
 import { risolviStatoGiornoBarberly } from "@/lib/festivita-italiane";
+import { normalizePhone } from "@/lib/phone";
+import { cercaClientePerTelefono } from "@/lib/clienti-telefono";
 import { NextResponse } from "next/server";
 import { prisma, ensureDatabase } from "@/lib/db";
 import { sendNotificationMail } from "@/lib/taaaac-mailer";
@@ -83,25 +85,18 @@ export async function POST(req: Request) {
     const firstName = nameParts[0] || "Cliente";
     const lastName = nameParts.slice(1).join(" ") || "Ospite";
 
-    let client = await prisma.client.findFirst({
-      where: { phone: cleanPhone },
-    });
+    // Un numero, un cliente (riconosce anche +39, spazi, ecc.). I punti fedelta' arrivano a servizio completato.
+    const trovato = await cercaClientePerTelefono(cleanPhone);
+    let client = trovato ? await prisma.client.findUnique({ where: { id: trovato.id } }) : null;
 
     if (!client) {
       client = await prisma.client.create({
         data: {
           firstName,
           lastName,
-          phone: cleanPhone,
+          phone: normalizePhone(cleanPhone) || cleanPhone,
           email: customerEmail?.trim() || null,
-          loyaltyPoints: 10, // 10 punti benvenuto
         },
-      });
-    } else {
-      // Aggiungi 10 punti fedeltà
-      await prisma.client.update({
-        where: { id: client.id },
-        data: { loyaltyPoints: { increment: 10 } },
       });
     }
 

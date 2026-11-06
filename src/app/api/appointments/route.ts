@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { normalizePhone } from "@/lib/phone";
+import { cercaClientePerTelefono } from "@/lib/clienti-telefono";
 import { prisma, ensureDatabase } from "@/lib/db";
 import { isAdminAuthenticated } from "@/lib/auth";
 
@@ -121,16 +123,22 @@ export async function POST(req: NextRequest) {
     // Se clientId manca ma sono forniti dati cliente al volo
     if (!clientId && body.nuovoCliente) {
       const { nome, cognome, telefono, email, noteCliente } = body.nuovoCliente;
-      const createdClient = await prisma.client.create({
-        data: {
-          firstName: nome.trim(),
-          lastName: cognome?.trim() || "Cliente",
-          phone: telefono.trim(),
-          email: email?.trim() || null,
-          notes: noteCliente?.trim() || null,
-        },
-      });
-      clientId = createdClient.id;
+      // Un numero, un cliente: se esiste gia' si usa la sua scheda invece di crearne una doppia
+      const esistente = await cercaClientePerTelefono(telefono);
+      if (esistente) {
+        clientId = esistente.id;
+      } else {
+        const createdClient = await prisma.client.create({
+          data: {
+            firstName: nome.trim(),
+            lastName: cognome?.trim() || "Cliente",
+            phone: normalizePhone(telefono) || telefono.trim(),
+            email: email?.trim() || null,
+            notes: noteCliente?.trim() || null,
+          },
+        });
+        clientId = createdClient.id;
+      }
     }
 
     if (!barberId || !clientId || !serviceId) {

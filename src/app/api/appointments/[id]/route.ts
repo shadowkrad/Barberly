@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { gestisciPuntiAppuntamento } from "@/lib/fidelity";
 import { prisma, ensureDatabase } from "@/lib/db";
 import { isAdminAuthenticated } from "@/lib/auth";
 import { triggerGoogleReviewBooster } from "@/lib/omnichannel-client";
@@ -50,6 +51,8 @@ export async function PUT(
     const body = await req.json();
     const { status, date, startTime, endTime, barberId, serviceId, notes, pricePaid } = body;
 
+    const precedente = await prisma.appointment.findUnique({ where: { id }, select: { status: true } });
+
     const dataToUpdate: any = {};
     if (status !== undefined) dataToUpdate.status = status;
     if (date !== undefined) dataToUpdate.date = new Date(date);
@@ -69,6 +72,18 @@ export async function PUT(
         service: true,
       },
     });
+
+    // Fidelity: punti per la spesa quando l'appuntamento e' completato (e storno se viene riaperto)
+    if (status !== undefined && precedente && status !== precedente.status) {
+      const mappa = (s: string) => (s === "COMPLETED" ? "COMPLETATO" : s);
+      await gestisciPuntiAppuntamento({
+        appuntamentoId: updated.id,
+        clienteId: updated.clientId,
+        statoPrecedente: mappa(precedente.status),
+        statoNuovo: mappa(status),
+        prezzo: updated.pricePaid ?? updated.service?.price ?? null,
+      });
+    }
 
     if (status === "COMPLETED" && updated.client?.email) {
       triggerGoogleReviewBooster({

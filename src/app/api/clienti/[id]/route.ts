@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
+import { cercaClientePerTelefono } from "@/lib/clienti-telefono";
 import { prisma, ensureDatabase } from "@/lib/db";
 import { isAdminAuthenticated } from "@/lib/auth";
+import { normalizePhone, getPhoneSearchConditions, parseDataNascita } from "@/lib/phone";
+import { assicuraTokenTessera } from "@/lib/fidelity";
 
 export async function GET(
   _req: NextRequest,
@@ -24,13 +27,27 @@ export async function GET(
             service: true,
           },
           orderBy: { date: "desc" },
+          take: 30,
         },
+        pointsMovements: { orderBy: { createdAt: "desc" }, take: 10 },
       },
     });
 
     if (!client) {
       return NextResponse.json({ error: "Cliente non trovato" }, { status: 404 });
     }
+
+    const tokenTessera = await assicuraTokenTessera(id);
+    // Buoni intestati al cliente ancora utilizzabili
+    const ora = new Date();
+    const buoni = await prisma.giftCard.findMany({
+      where: { clienteId: id, stato: "ATTIVA", OR: [{ dataScadenza: null }, { dataScadenza: { gte: ora } }] },
+      orderBy: { createdAt: "desc" },
+      select: {
+        id: true, codice: true, motivo: true, tipoValore: true, importoIniziale: true, saldoResiduo: true,
+        percentuale: true, descrizioneServizio: true, dataScadenza: true,
+      },
+    });
 
     return NextResponse.json({
       id: client.id,
@@ -41,6 +58,11 @@ export async function GET(
       note: client.notes || "",
       puntiFedelta: client.loyaltyPoints,
       consensoPrivacy: client.privacyConsent,
+      consensoMarketing: client.marketingConsent,
+      dataNascita: client.birthDate ? client.birthDate.toISOString() : null,
+      tokenTessera,
+      buoni,
+      movimentiPunti: client.pointsMovements,
       createdAt: client.createdAt.toISOString(),
       appuntamenti: client.appointments.map((a) => ({
         id: a.id,
@@ -71,17 +93,44 @@ export async function PUT(
     await ensureDatabase();
     const { id } = await params;
     const body = await req.json();
-    const { nome, cognome, telefono, email, note, puntiFedelta, consensoPrivacy } = body;
+    const { nome, cognome, telefono, email, note, consensoPrivacy, consensoMarketing, dataNascita } = body;
+
+    // Telefono: salvato normalizzato e mai uguale a quello di un altro cliente
+    let telefonoDaSalvare: string | undefined;
+    if (telefono !== undefined) {
+      telefonoDaSalvare = normalizePhone(telefono) || String(telefono).trim();
+      const altro = await cercaClientePerTelefono(telefono, id);
+      if (altro) {
+        return NextResponse.json(
+          {
+            error: `Questo numero è già registrato per ${altro.firstName} ${altro.lastName}`.trim(),
+            clienteEsistente: { id: altro.id, nome: altro.firstName, cognome: altro.lastName, telefono: altro.phone },
+          },
+          { status: 409 }
+        );
+      }
+    }
+
+    let nascita: Date | null | undefined;
+    if (dataNascita !== undefined) {
+      if (dataNascita) {
+        nascita = parseDataNascita(dataNascita);
+        if (!nascita) return NextResponse.json({ error: "Data di nascita non valida" }, { status: 400 });
+      } else {
+        nascita = null;
+      }
+    }
 
     const updated = await prisma.client.update({
       where: { id },
       data: {
         ...(nome !== undefined && { firstName: nome.trim() }),
         ...(cognome !== undefined && { lastName: cognome.trim() }),
-        ...(telefono !== undefined && { phone: telefono.trim() }),
+        ...(telefonoDaSalvare !== undefined && { phone: telefonoDaSalvare }),
+        ...(nascita !== undefined && { birthDate: nascita }),
+        ...(consensoMarketing !== undefined && { marketingConsent: Boolean(consensoMarketing) }),
         ...(email !== undefined && { email: email?.trim() || null }),
         ...(note !== undefined && { notes: note?.trim() || null }),
-        ...(puntiFedelta !== undefined && { loyaltyPoints: Number(puntiFedelta) || 0 }),
         ...(consensoPrivacy !== undefined && { privacyConsent: Boolean(consensoPrivacy) }),
       },
     });
@@ -112,11 +161,14 @@ export async function DELETE(
       data: {
         firstName: "Cliente",
         lastName: "Anonimizzato",
-        phone: "+39 000 0000000",
+        phone: "CANCELLATO",
         email: null,
         notes: null,
         loyaltyPoints: 0,
         privacyConsent: false,
+        marketingConsent: false,
+        birthDate: null,
+        loyaltyToken: null,
       },
     });
 

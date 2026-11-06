@@ -1,5 +1,31 @@
 ﻿# 💈 Barberly — Release Notes
 
+## Novità della Versione 1.1.2 (Patch)
+
+### 1. 👤 Scheda Cliente Rinnovata
+- **Un numero, un cliente**: se il telefono esiste già (anche scritto con spazi o +39) il gestionale lo segnala e propone di aprire la scheda esistente, in creazione, in modifica, nelle prenotazioni online e nei nuovi appuntamenti.
+- **Cellulare o fisso**: i numeri fissi (es. 0575) restano ammessi ma non ricevono WhatsApp né messaggi automatici; per loro conta l'email o l'avviso a voce.
+- **Data di nascita** facoltativa e **consenso promozionale**, base per il buono compleanno.
+- **Scheda ordinata**: anagrafica, punti con ultimi movimenti, buoni attivi e storico visite nello stesso posto. Il saldo punti non si modifica più a mano: ogni variazione resta registrata.
+- **Anonimizzazione GDPR** più pulita: telefono, data di nascita e link della tessera vengono azzerati.
+
+### 2. 🎟️ Fedeltà a Punti Vera
+- **Punti automatici**: a servizio completato il cliente guadagna i punti della spesa (regola scelta dal titolare), senza doppi accrediti e con storno se l'appuntamento viene riaperto. I punti finti assegnati alla prenotazione online sono stati tolti.
+- **Cassa fedeltà**: cerca il cliente per telefono, nome o link della tessera, accredita la spesa e riscatta i premi. Premi scelti dal titolare.
+- **Tessera digitale**: link privato (con QR) con logo e colori della barberia, punti, premi e ultimi movimenti; aggiungibile alla schermata Home del telefono con il logo come icona.
+- **Storico completo** di ogni movimento (origine, importo, saldo dopo, operatore).
+
+### 3. 🎁 Buoni Completi, Invio e Stampa
+- **Un buono per ogni motivo**: regalo, sconto, compensazione, gesto commerciale, premio punti, compleanno, promozione. Valore in euro, percentuale o servizio in omaggio; scadenza facoltativa; spesa minima; uso in più volte o unico.
+- **Cassa con anteprima** dello sconto, annullo con motivo e movimenti registrati.
+- **Email** (di default, dal servizio Taaaac), **WhatsApp a scelta dell'esercente** (mai in automatico, mai verso i fissi), pagina del buono con QR, **stampa A4 o ricevuta da 80 mm** e ristampa con lo stesso codice.
+
+### 4. 🎂 Compleanno e Premi che Diventano Buoni
+- **Buono compleanno automatico**, una volta per cliente e per anno, con email solo a chi ha dato il consenso. Il controllo parte quando si apre la pagina Buoni o dall'indirizzo `/api/cron/compleanni`.
+- **Premio punti → buono**: riscattando un premio si scalano i punti e nasce un buono intestato al cliente, nella stessa operazione.
+
+---
+
 ## Novità della Versione 1.1.1 (Patch)
 
 ### 1. ✈️ Telegram Gestito da Taaaac Core (Hub Centralizzato)

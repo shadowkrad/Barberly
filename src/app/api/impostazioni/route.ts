@@ -53,6 +53,8 @@ export async function GET() {
           pointsPerEuro: fidelityRules?.pointsPerEuro || 1,
           welcomeBonusPoints: fidelityRules?.welcomeBonusPoints || 10,
           minPointsToRedeem: fidelityRules?.minPointsToRedeem || 40,
+          rewardVoucherMonths: fidelityRules?.rewardVoucherMonths ?? 6,
+          compleanno: fidelityRules?.compleanno,
           rewards: fidelityRules?.rewards || [
             { id: "rew_b1", name: "Rifinitura Barba Express & Panno Caldo", pointsRequired: 40, rewardType: "FREE_ITEM", freeItemName: "Modellatura barba e balsamo idratante" },
             { id: "rew_b2", name: "Sconto 10€ su Taglio o Trattamento", pointsRequired: 80, rewardType: "DISCOUNT", discountAmount: 10 },
