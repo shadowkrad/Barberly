@@ -2,6 +2,7 @@
 
 ## Novità della Versione 1.1.2 (Patch)
 
+- Il pallino WhatsApp compare solo nella vetrina pubblica del sito: non piu' nelle pagine interne, nelle tessere e nei buoni dei clienti (prima bastava una pagina non prevista per vederlo).
 ### 1. 👤 Scheda Cliente Rinnovata
 - **Un numero, un cliente**: se il telefono esiste già (anche scritto con spazi o +39) il gestionale lo segnala e propone di aprire la scheda esistente, in creazione, in modifica, nelle prenotazioni online e nei nuovi appuntamenti.
 - **Cellulare o fisso**: i numeri fissi (es. 0575) restano ammessi ma non ricevono WhatsApp né messaggi automatici; per loro conta l'email o l'avviso a voce.
