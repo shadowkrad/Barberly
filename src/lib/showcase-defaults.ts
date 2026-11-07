@@ -18,6 +18,8 @@ export interface ShowcaseContactInfo {
   hoursWeekday?: string;
   hoursWeekend?: string;
   hoursNote?: string;
+  /** Orari ufficiali raggruppati (calcolati dalla pagina Orari, non si modificano dallo Studio) */
+  hoursRows?: Array<{ label: string; orario: string; chiuso: boolean }>;
   responseNote?: string;
   brandClaim?: string;
   guaranteeText?: string;
@@ -73,6 +75,10 @@ export interface ShowcaseConfig {
     showAbout: boolean;
     showHours: boolean;
     showContact: boolean;
+    /** Mostra indirizzo / telefono / email impostati in Impostazioni > Bottega */
+    showAddress?: boolean;
+    showPhone?: boolean;
+    showEmail?: boolean;
   };
 
   // Informazioni di Contatto & Orari
@@ -96,7 +102,7 @@ export const DEFAULT_BARBERLY_CONTACT_INFO: ShowcaseContactInfo = {
   email: "info@gentlemanbarber.it",
   hoursWeekday: "Martedì – Venerdì: 09:00 – 13:00 / 14:30 – 19:30",
   hoursWeekend: "Sabato: 08:30 – 19:00 (Continuato)",
-  hoursNote: "Lunedì e Domenica: Chiuso • Si riceve su appuntamento",
+  hoursNote: "Si riceve su appuntamento",
   responseNote: "Rispondiamo rapidamente durante gli orari di apertura.",
   brandClaim: "Il punto di riferimento per il grooming maschile e la rasatura tradizionale con panni caldi e prodotti esclusivi.",
   guaranteeText: "Tagli su misura, cura della barba e rituali di benessere maschile realizzati con passione ed eccellenza artigianale.",
@@ -175,6 +181,9 @@ export const DEFAULT_BARBERLY_SHOWCASE_CONFIG: ShowcaseConfig = {
     showAbout: true,
     showHours: true,
     showContact: true,
+    showAddress: true,
+    showPhone: true,
+    showEmail: true,
   },
 
   customLabels: {

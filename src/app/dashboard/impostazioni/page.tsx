@@ -126,6 +126,7 @@ export default function BarberlyImpostazioniPage() {
     nomeBottega: "Gentleman Barber Club",
     titolare: "Marco Guidelli",
     indirizzo: "Via Roma, 42 - 52100 Arezzo (AR)",
+    descrizione: "",
     telefono: "+39 0575 123456",
     emailBottega: "info@gentlemanbarber.it",
     sitoWeb: "https://barberly-one.vercel.app",
@@ -139,6 +140,19 @@ export default function BarberlyImpostazioniPage() {
     logoUrl: "",
     faviconUrl: "",
   });
+
+  // Orari ufficiali (sola lettura: si modificano nella pagina Orari)
+  const [orariVeri, setOrariVeri] = useState<
+    Array<{ giorno: number; oraInizio: string; oraFine: string; pausaInizio: string | null; pausaFine: string | null; attivo: boolean }>
+  >([]);
+  useEffect(() => {
+    fetch("/api/orari")
+      .then((r) => r.json())
+      .then((d) => {
+        if (Array.isArray(d)) setOrariVeri(d);
+      })
+      .catch(() => {});
+  }, []);
 
   // Brand Assets State & Refs
   const logoInputRef = useRef<HTMLInputElement | null>(null);
@@ -161,6 +175,8 @@ export default function BarberlyImpostazioniPage() {
             coloreAccento: data.accentColor || f.coloreAccento,
             emailBottega: data.contactEmail || f.emailBottega,
             telefono: data.phone || f.telefono,
+            indirizzo: data.address || f.indirizzo,
+            descrizione: data.descrizione !== undefined ? data.descrizione : f.descrizione,
           }));
           if (data?.telegramHub) setTelegramHub(data.telegramHub);
           if (data.fidelitySettings) setFidelitySettings(data.fidelitySettings);
@@ -230,13 +246,12 @@ export default function BarberlyImpostazioniPage() {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          // Dati dell'attivita' (colori e logo si gestiscono solo in Aspetto & Brand)
           brandName: form.nomeBottega,
-          logoUrl: form.logoUrl || null,
-          faviconUrl: form.faviconUrl || null,
-          primaryColor: form.colorePrimario,
-          accentColor: form.coloreAccento,
           contactEmail: form.emailBottega,
           phone: form.telefono,
+          address: form.indirizzo,
+          descrizione: form.descrizione,
           fidelitySettings,
         }),
       });
@@ -496,24 +511,53 @@ export default function BarberlyImpostazioniPage() {
               />
             </div>
           </div>
+
+          <div className="pt-2 border-t border-slate-800">
+            <label className="block text-xs font-semibold text-slate-300 mb-1">Descrizione dell&apos;attività</label>
+            <textarea
+              rows={4}
+              value={form.descrizione}
+              onChange={(e) => setForm({ ...form, descrizione: e.target.value })}
+              placeholder="Racconta in poche righe chi siete e cosa vi rende speciali"
+              className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs sm:text-sm focus:ring-2 focus:ring-amber-500 focus:outline-hidden resize-none"
+            />
+            <p className="text-[11px] text-slate-400 mt-1">
+              Nome, indirizzo, telefono, email e descrizione si modificano solo qui: la vetrina li legge da questa scheda
+              (in &quot;Aspetto &amp; Brand&quot; scegli quali mostrare). Gli orari si impostano nella pagina Orari; colori e logo in &quot;Aspetto &amp; Brand&quot;.
+            </p>
+          </div>
         </div>
       )}
 
       {/* TAB 2: ORARI & TURNI */}
       {activeTab === "orari" && (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xs space-y-5">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs text-slate-300">
-            {[
-              { day: "Lunedì", hours: "Chiuso (Giorno di riposo)", active: false },
-              { day: "Martedì - Venerdì", hours: "09:00 - 13:00 / 14:30 - 19:30", active: true },
-              { day: "Sabato", hours: "08:30 - 19:00 (Orario Continuato)", active: true },
-              { day: "Domenica", hours: "Chiuso", active: false },
-            ].map((o) => (
-              <div key={o.day} className={`p-4 rounded-xl border ${o.active ? "bg-slate-800/90 border-slate-700/80" : "bg-slate-950/60 border-slate-800 text-slate-500"}`}>
-                <span className="font-bold text-white block text-sm">{o.day}</span>
-                <span className={`font-mono text-xs block mt-1.5 ${o.active ? "text-amber-400" : "text-slate-500"}`}>{o.hours}</span>
-              </div>
-            ))}
+          <div className="text-xs text-slate-300 space-y-3">
+            <p className="leading-relaxed">
+              Questi sono gli <strong className="text-white">orari ufficiali</strong> della bottega: li trovi nella vetrina, nel piè di pagina e
+              vengono inviati a Google, Facebook e Instagram. Per modificarli vai alla pagina{" "}
+              <a href="/dashboard/orari" className="text-amber-400 font-semibold underline">Orari</a>.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+              {[1, 2, 3, 4, 5, 6, 0].map((g) => {
+                const o = orariVeri.find((x) => x.giorno === g);
+                const nome = ["Domenica", "Lunedì", "Martedì", "Mercoledì", "Giovedì", "Venerdì", "Sabato"][g];
+                const attivo = Boolean(o?.attivo);
+                const testo = !o
+                  ? "…"
+                  : !attivo
+                  ? "Chiuso"
+                  : o.pausaInizio && o.pausaFine && o.pausaInizio < o.pausaFine
+                  ? `${o.oraInizio} - ${o.pausaInizio} / ${o.pausaFine} - ${o.oraFine}`
+                  : `${o.oraInizio} - ${o.oraFine}`;
+                return (
+                  <div key={g} className={`p-4 rounded-xl border ${attivo ? "bg-slate-800/90 border-slate-700/80" : "bg-slate-950/60 border-slate-800 text-slate-500"}`}>
+                    <span className="font-bold text-white block text-sm">{nome}</span>
+                    <span className={`font-mono text-xs block mt-1.5 ${attivo ? "text-amber-400" : "text-slate-500"}`}>{testo}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
 
           <div className="p-4 rounded-xl bg-slate-800/80 border border-slate-700/80 text-xs space-y-3">

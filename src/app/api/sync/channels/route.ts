@@ -2,9 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   syncOmnichannelChannels,
   fetchOmnichannelStatus,
-  formatDisponibilitaToOmnichannel,
   formatEccezioniToSpecialClosures,
 } from "@/lib/omnichannel-client";
+import { prisma, ensureDatabase } from "@/lib/db";
+import { leggiOrariGiorni, orariUfficialiPerCanali } from "@/lib/anagrafica-attivita";
 
 async function isCallerAuthorized(): Promise<boolean> {
   try {
@@ -39,29 +40,19 @@ export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    // 1. Estrazione o conversione di weeklyHours
-    let weeklyHours = body.weeklyHours;
-    if (!weeklyHours && (body.orari || body.disponibilita)) {
-      weeklyHours = formatDisponibilitaToOmnichannel(body.orari || body.disponibilita);
-    }
+    // 1. Gli orari su Google / Facebook / Instagram sono SEMPRE gli orari ufficiali (pagina Orari,
+    //    giorni di chiusura inclusi): quelli eventualmente inviati dal chiamante non vengono usati.
+    const weeklyHours = orariUfficialiPerCanali(await leggiOrariGiorni());
 
-    // 2. Estrazione o conversione di specialClosures
+    // 2. Chiusure straordinarie: quelle inviate dal chiamante oppure le prossime del calendario
     let specialClosures = body.specialClosures;
-    if (!specialClosures && body.eccezioni) {
-      specialClosures = formatEccezioniToSpecialClosures(body.eccezioni);
-    }
-
-    if (!weeklyHours || !Array.isArray(weeklyHours)) {
-      // Fallback con orari standard per moduli a orario continuato (es. Tavoly, Vendoly, Taskly, Showly)
-      weeklyHours = [
-        { dayOfWeek: "MONDAY", isOpen: true, slots: [{ open: "09:00", close: "19:00" }] },
-        { dayOfWeek: "TUESDAY", isOpen: true, slots: [{ open: "09:00", close: "19:00" }] },
-        { dayOfWeek: "WEDNESDAY", isOpen: true, slots: [{ open: "09:00", close: "19:00" }] },
-        { dayOfWeek: "THURSDAY", isOpen: true, slots: [{ open: "09:00", close: "19:00" }] },
-        { dayOfWeek: "FRIDAY", isOpen: true, slots: [{ open: "09:00", close: "19:00" }] },
-        { dayOfWeek: "SATURDAY", isOpen: true, slots: [{ open: "09:00", close: "19:00" }] },
-        { dayOfWeek: "SUNDAY", isOpen: false, slots: [] },
-      ];
+    if (!specialClosures) {
+      await ensureDatabase();
+      const oggi = new Date().toISOString().slice(0, 10);
+      const eccezioni = Array.isArray(body.eccezioni)
+        ? body.eccezioni
+        : await prisma.eccezioneCalendario.findMany({ where: { tipo: "CHIUSURA", data: { gte: oggi } } });
+      specialClosures = formatEccezioniToSpecialClosures(eccezioni);
     }
 
     const result = await syncOmnichannelChannels({

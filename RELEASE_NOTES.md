@@ -25,6 +25,12 @@
 - **Buono compleanno automatico**, una volta per cliente e per anno, con email solo a chi ha dato il consenso. Il controllo parte quando si apre la pagina Buoni o dall'indirizzo `/api/cron/compleanni`.
 - **Premio punti → buono**: riscattando un premio si scalano i punti e nasce un buono intestato al cliente, nella stessa operazione.
 
+
+### Dati della Bottega e Orari in un Solo Posto
+- **Un solo posto per ogni dato**: nome, indirizzo, telefono, email e descrizione si modificano solo in Impostazioni > Bottega (l'indirizzo prima non veniva nemmeno salvato). Gli orari ufficiali sono quelli della pagina Orari. Lo Studio Aspetto li mostra in sola lettura e permette solo di scegliere cosa far vedere.
+- **Orari veri nella vetrina**: il piè di pagina mostra gli orari della pagina Orari (giorni raggruppati, pause incluse, chiusure) e li invia uguali a Google, Facebook e Instagram. Prima il piè di pagina mostrava sempre un testo di esempio e le impostazioni un elenco finto.
+- **Interruttori in più** nella scheda Sezioni: indirizzo, telefono, email. Colori e logo si modificano solo nello Studio.
+
 ---
 
 ## Novità della Versione 1.1.1 (Patch)
