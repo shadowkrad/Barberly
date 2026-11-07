@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, ensureDatabase } from "@/lib/db";
 import { isAdminAuthenticated } from "@/lib/auth";
+import { riallineaVetrinaSalvata } from "@/lib/anagrafica-attivita";
 
 export async function GET() {
   try {
@@ -79,6 +80,9 @@ export async function PUT(req: NextRequest) {
         },
       });
     }
+
+    // Gli orari ufficiali alimentano anche la vetrina e il piede del sito
+    await riallineaVetrinaSalvata().catch(() => {});
 
     return NextResponse.json({ success: true, message: "Orari aggiornati con successo" });
   } catch (error) {

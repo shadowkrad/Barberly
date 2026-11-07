@@ -882,12 +882,13 @@ export default function ShowcaseVisualStudio() {
                   <textarea
                     rows={4}
                     value={config.about.description}
-                    onChange={(e) =>
-                      setConfig({ ...config, about: { ...config.about, description: e.target.value } })
-                    }
-                    className="w-full px-3 py-2 rounded-xl bg-slate-800 border border-slate-700 text-white text-xs focus:ring-2 focus:ring-amber-500 focus:outline-hidden resize-none"
+                    readOnly title="Si modifica in Impostazioni > Bottega"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-slate-400 text-xs cursor-not-allowed resize-none"
                     placeholder="Racconta ai clienti la storia del locale..."
                   />
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    Si modifica in <strong>Impostazioni &gt; Bottega</strong>; qui la vetrina la mostra così com&apos;è.
+                  </p>
                 </div>
 
                 <div className="pt-2 border-t border-slate-800 space-y-3">
@@ -978,38 +979,23 @@ export default function ShowcaseVisualStudio() {
                     <span>Orari di Apertura</span>
                   </h4>
                   <div className="space-y-2">
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 mb-1">Orari Feriali (Mar - Ven)</label>
-                      <input
-                        type="text"
-                        value={config.contactInfo?.hoursWeekday || ""}
-                        onChange={(e) =>
-                          setConfig({
-                            ...config,
-                            contactInfo: { ...(config.contactInfo || DEFAULT_BARBERLY_CONTACT_INFO), hoursWeekday: e.target.value },
-                          })
-                        }
-                        placeholder="Martedì – Venerdì: 09:00 – 13:00 / 14:30 – 19:30"
-                        className="w-full text-xs px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-white focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
-                      />
+                    <p className="text-[10px] text-slate-400 leading-relaxed">
+                      Gli orari sono quelli ufficiali della pagina <strong className="text-slate-200">Orari</strong>: li vedi qui, non si
+                      modificano dallo Studio (così vetrina, Google e social restano identici).
+                    </p>
+                    <div className="p-2.5 rounded-lg bg-slate-950 border border-slate-800 text-[11px] text-slate-200 font-mono space-y-1">
+                      {(config.contactInfo?.hoursRows || []).length > 0 ? (
+                        (config.contactInfo?.hoursRows || []).map((r) => (
+                          <div key={r.label}>
+                            <span className="text-slate-400 font-sans">{r.label}:</span> {r.orario}
+                          </div>
+                        ))
+                      ) : (
+                        <div>{config.contactInfo?.hoursWeekday || "Non impostato"}</div>
+                      )}
                     </div>
                     <div>
-                      <label className="block text-[10px] font-bold text-slate-400 mb-1">Orari Weekend (Sabato)</label>
-                      <input
-                        type="text"
-                        value={config.contactInfo?.hoursWeekend || ""}
-                        onChange={(e) =>
-                          setConfig({
-                            ...config,
-                            contactInfo: { ...(config.contactInfo || DEFAULT_BARBERLY_CONTACT_INFO), hoursWeekend: e.target.value },
-                          })
-                        }
-                        placeholder="Sabato: 08:30 – 19:00 (Continuato)"
-                        className="w-full text-xs px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-white focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 mb-1">Note Chiusura & Appuntamenti</label>
+                      <label className="block text-[10px] font-bold text-slate-400 mb-1">Nota sugli orari (facoltativa)</label>
                       <input
                         type="text"
                         value={config.contactInfo?.hoursNote || ""}
@@ -1019,7 +1005,7 @@ export default function ShowcaseVisualStudio() {
                             contactInfo: { ...(config.contactInfo || DEFAULT_BARBERLY_CONTACT_INFO), hoursNote: e.target.value },
                           })
                         }
-                        placeholder="Lunedì e Domenica: Chiuso • Si riceve su appuntamento"
+                        placeholder="Si riceve su appuntamento"
                         className="w-full text-xs px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-white focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
                       />
                     </div>
@@ -1032,20 +1018,18 @@ export default function ShowcaseVisualStudio() {
                     <MapPin className="w-3.5 h-3.5 text-amber-400" />
                     <span>Sede & Recapiti</span>
                   </h4>
+                  <p className="text-[10px] text-slate-400 leading-relaxed">
+                    Indirizzo, telefono ed email sono quelli di <strong className="text-slate-200">Impostazioni &gt; Bottega</strong>: qui scegli solo se mostrarli (scheda &quot;Sezioni&quot;).
+                  </p>
                   <div className="space-y-2">
                     <div>
                       <label className="block text-[10px] font-bold text-slate-400 mb-1">Indirizzo Completo</label>
                       <input
                         type="text"
                         value={config.contactInfo?.address || ""}
-                        onChange={(e) =>
-                          setConfig({
-                            ...config,
-                            contactInfo: { ...(config.contactInfo || DEFAULT_BARBERLY_CONTACT_INFO), address: e.target.value },
-                          })
-                        }
+                        readOnly title="Si modifica in Impostazioni > Bottega"
                         placeholder="Via Roma, 42 — Milano (MI)"
-                        className="w-full text-xs px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-white focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
+                        className="w-full text-xs px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-400 cursor-not-allowed"
                       />
                     </div>
                     <div>
@@ -1053,14 +1037,9 @@ export default function ShowcaseVisualStudio() {
                       <input
                         type="text"
                         value={config.contactInfo?.phone || ""}
-                        onChange={(e) =>
-                          setConfig({
-                            ...config,
-                            contactInfo: { ...(config.contactInfo || DEFAULT_BARBERLY_CONTACT_INFO), phone: e.target.value },
-                          })
-                        }
+                        readOnly title="Si modifica in Impostazioni > Bottega"
                         placeholder="+39 02 1234567"
-                        className="w-full text-xs px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-white focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
+                        className="w-full text-xs px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-400 cursor-not-allowed"
                       />
                     </div>
                     <div>
@@ -1068,14 +1047,9 @@ export default function ShowcaseVisualStudio() {
                       <input
                         type="email"
                         value={config.contactInfo?.email || ""}
-                        onChange={(e) =>
-                          setConfig({
-                            ...config,
-                            contactInfo: { ...(config.contactInfo || DEFAULT_BARBERLY_CONTACT_INFO), email: e.target.value },
-                          })
-                        }
+                        readOnly title="Si modifica in Impostazioni > Bottega"
                         placeholder="info@gentlemanbarber.it"
-                        className="w-full text-xs px-2.5 py-1.5 bg-slate-950 border border-slate-800 rounded-lg text-white focus:ring-2 focus:ring-amber-500 focus:outline-hidden"
+                        className="w-full text-xs px-2.5 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-slate-400 cursor-not-allowed"
                       />
                     </div>
                   </div>
@@ -1104,8 +1078,11 @@ export default function ShowcaseVisualStudio() {
                     { key: "showBarbers", label: "Maestri Barbieri", desc: "Staff e poltrone della bottega" },
                     { key: "showGallery", label: "Galleria Fotografica", desc: "Foto e atmosfera del salone" },
                     { key: "showAbout", label: "Chi Siamo & Storia", desc: "Filosofia e citazione del fondatore" },
-                    { key: "showHours", label: "Orari di Apertura", desc: "Fasce orarie e turni di lavoro" },
-                    { key: "showContact", label: "Dove Trovarci & Mappa", desc: "Indirizzo, telefono e mappa bottega" },
+                    { key: "showHours", label: "Orari di Apertura", desc: "Orari ufficiali dalla pagina Orari (piè di pagina)" },
+                    { key: "showContact", label: "Dove Trovarci", desc: "Riquadro con indirizzo e recapiti; sotto scegli cosa mostrare" },
+                    { key: "showAddress", label: "Indirizzo", desc: "Mostra l'indirizzo (da Impostazioni > Bottega)" },
+                    { key: "showPhone", label: "Telefono / WhatsApp", desc: "Mostra il numero di telefono" },
+                    { key: "showEmail", label: "Email", desc: "Mostra l'email di contatto" },
                   ].map((sec) => (
                     <div
                       key={sec.key}
@@ -1118,7 +1095,7 @@ export default function ShowcaseVisualStudio() {
                       <label className="relative inline-flex items-center cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={config.sections[sec.key as keyof typeof config.sections]}
+                          checked={Boolean(config.sections[sec.key as keyof typeof config.sections])}
                           onChange={(e) =>
                             setConfig({
                               ...config,

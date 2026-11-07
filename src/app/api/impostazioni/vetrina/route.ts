@@ -1,18 +1,15 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma, ensureDatabase } from "@/lib/db";
 import { parseShowcaseConfig, DEFAULT_BARBERLY_SHOWCASE_CONFIG } from "@/lib/showcase-defaults";
+import { applicaAnagrafica, caricaVetrinaUnificata, leggiCache, leggiOrariGiorni } from "@/lib/anagrafica-attivita";
 
 export async function GET() {
   await ensureDatabase();
   try {
-    const config = await prisma.tenantLocalCache.findUnique({
-      where: { id: "singleton" },
-    });
-
-    const parsed = parseShowcaseConfig(config?.showcaseConfig);
-    // Assicuriamoci che brandName e colori siano sincronizzati
+    // Dati dell'attivita' e orari arrivano da Impostazioni > Bottega e dalla pagina Orari (non si modificano
+    // qui); colori, logo e favicon si modificano solo nello Studio.
+    const { showcase: parsed, cache: config } = await caricaVetrinaUnificata();
     if (config) {
-      if (config.brandName) parsed.brandName = config.brandName;
       if (config.primaryColor) parsed.primaryColor = config.primaryColor;
       if (config.accentColor) parsed.accentColor = config.accentColor;
       if (config.logoUrl !== undefined) parsed.logoUrl = config.logoUrl;
@@ -29,13 +26,19 @@ export async function GET() {
 export async function PUT(req: NextRequest) {
   await ensureDatabase();
   try {
-    const showcaseConfig = await req.json();
+    const body = await req.json();
+    // Nome, indirizzo, telefono, email, descrizione e orari non si modificano dallo Studio: si riallineano sempre
+    const [cacheAttuale, giorni] = await Promise.all([leggiCache(), leggiOrariGiorni()]);
+    const showcaseConfig = applicaAnagrafica(parseShowcaseConfig(JSON.stringify(body)), cacheAttuale, giorni);
+    showcaseConfig.about = {
+      ...showcaseConfig.about,
+      description: parseShowcaseConfig(cacheAttuale?.showcaseConfig).about.description,
+    };
     const showcaseConfigStr = JSON.stringify(showcaseConfig);
 
     const updated = await prisma.tenantLocalCache.upsert({
       where: { id: "singleton" },
       update: {
-        ...(showcaseConfig.brandName && { brandName: showcaseConfig.brandName }),
         ...(showcaseConfig.primaryColor && { primaryColor: showcaseConfig.primaryColor }),
         ...(showcaseConfig.accentColor && { accentColor: showcaseConfig.accentColor }),
         ...(showcaseConfig.logoUrl !== undefined && { logoUrl: showcaseConfig.logoUrl }),

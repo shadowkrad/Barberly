@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma, ensureDatabase } from "@/lib/db";
 import { parseShowcaseConfig, DEFAULT_BARBERLY_SHOWCASE_CONFIG } from "@/lib/showcase-defaults";
 import { fetchTenantConfig } from "@/lib/taaaac-client";
+import { caricaVetrinaUnificata, riallineaVetrinaSalvata } from "@/lib/anagrafica-attivita";
 
 /**
  * Telegram è gestito da Taaaac Core: qui si legge solo lo stato (mai token né chat ID).
@@ -38,15 +39,18 @@ export async function GET() {
     }
 
     if (config) {
+      const { showcase: vetrinaUnificata } = await caricaVetrinaUnificata();
       return NextResponse.json({
         brandName: config.brandName,
+        address: config.address,
+        descrizione: vetrinaUnificata.about.description,
         logoUrl: config.logoUrl,
         faviconUrl: config.faviconUrl,
         primaryColor: config.primaryColor,
         accentColor: config.accentColor,
         contactEmail: config.contactEmail,
         phone: config.phone,
-        showcaseConfig: parseShowcaseConfig(config.showcaseConfig),
+        showcaseConfig: vetrinaUnificata,
         telegramHub: await getTelegramHub(),
         fidelitySettings: {
           enabled: Boolean(config.fidelityEnabled),
@@ -92,7 +96,7 @@ export async function PUT(req: NextRequest) {
   await ensureDatabase();
   try {
     const body = await req.json();
-    const { brandName, logoUrl, faviconUrl, primaryColor, accentColor, contactEmail, phone, showcaseConfig, fidelitySettings } = body;
+    const { brandName, logoUrl, faviconUrl, primaryColor, accentColor, contactEmail, phone, address, descrizione, showcaseConfig, fidelitySettings } = body;
 
     const showcaseConfigStr =
       showcaseConfig !== undefined
@@ -111,6 +115,7 @@ export async function PUT(req: NextRequest) {
         ...(accentColor !== undefined && { accentColor }),
         ...(contactEmail !== undefined && { contactEmail }),
         ...(phone !== undefined && { phone }),
+        ...(address !== undefined && { address: String(address) }),
         ...(showcaseConfigStr !== undefined && { showcaseConfig: showcaseConfigStr }),
         ...(fidelitySettings?.enabled !== undefined && { fidelityEnabled: Boolean(fidelitySettings.enabled) }),
         ...(fidelitySettings !== undefined && { fidelityRules: JSON.stringify(fidelitySettings) }),
@@ -128,12 +133,27 @@ export async function PUT(req: NextRequest) {
         accentColor: accentColor || "#d97706",
         contactEmail: contactEmail || "info@barberly.taaaac.eu",
         phone: phone || "+39 02 8901 2345",
+        ...(address !== undefined && { address: String(address) }),
         showcaseConfig: showcaseConfigStr || "{}",
         fidelityEnabled: Boolean(fidelitySettings?.enabled),
         fidelityRules: fidelitySettings ? JSON.stringify(fidelitySettings) : "{}",
         lastSyncedAt: new Date(),
       },
     });
+
+    // La descrizione dell'attivita' vive nella vetrina salvata (about.description) ma si modifica solo da qui
+    if (descrizione !== undefined) {
+      const sc = parseShowcaseConfig(updated.showcaseConfig);
+      sc.about = { ...sc.about, description: String(descrizione) };
+      await prisma.tenantLocalCache.update({
+        where: { id: "singleton" },
+        data: { showcaseConfig: JSON.stringify(sc) },
+      });
+    }
+    // Allinea la copia salvata della vetrina ai dati dell'attivita' appena salvati
+    if ([brandName, contactEmail, phone, address, descrizione, showcaseConfigStr].some((v) => v !== undefined)) {
+      await riallineaVetrinaSalvata();
+    }
 
     return NextResponse.json({ success: true, updated });
   } catch (error) {

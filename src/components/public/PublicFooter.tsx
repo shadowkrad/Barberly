@@ -3,23 +3,36 @@ import Link from "next/link";
 import { Scissors, MapPin, Phone, Clock, Lock, Sparkles, Mail } from "lucide-react";
 import { TenantConfigResponse } from "@/types/taaaac";
 import { parseShowcaseConfig } from "@/lib/showcase-defaults";
+import { caricaVetrinaUnificata } from "@/lib/anagrafica-attivita";
 
 interface PublicFooterProps {
   config: TenantConfigResponse;
 }
 
-export function PublicFooter({ config }: PublicFooterProps) {
+export async function PublicFooter({ config }: PublicFooterProps) {
   const { theme, contact } = config;
-  const showcase = typeof config.showcaseConfig === "string" 
+  // Il piede legge sempre la vetrina salvata, con dati dell'attivita' e orari ufficiali allineati
+  let unificata: Awaited<ReturnType<typeof caricaVetrinaUnificata>> | null = null;
+  try {
+    unificata = await caricaVetrinaUnificata();
+  } catch {}
+  const showcase = unificata
+    ? unificata.showcase
+    : typeof config.showcaseConfig === "string"
     ? parseShowcaseConfig(config.showcaseConfig)
     : (config.showcaseConfig || parseShowcaseConfig(null));
 
-  const contactInfo = showcase.contactInfo || {};
+  const contactInfo: any = showcase.contactInfo || {};
+  const mostraIndirizzo = showcase.sections?.showAddress !== false;
+  const mostraTelefono = showcase.sections?.showPhone !== false;
+  const mostraEmail = showcase.sections?.showEmail !== false;
+  const mostraColonnaContatti = showcase.sections?.showContact !== false && (mostraIndirizzo || mostraTelefono || mostraEmail);
+  const righeOrari: Array<{ label: string; orario: string }> = Array.isArray(contactInfo.hoursRows) ? contactInfo.hoursRows : [];
 
   return (
     <footer className="w-full bg-slate-900 text-slate-300 border-t border-slate-800 pt-12 pb-8 mt-20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className={`grid grid-cols-1 ${showcase.sections?.showHours !== false ? "md:grid-cols-4" : "md:grid-cols-3"} gap-8 pb-8 border-b border-slate-800 text-xs`}>
+        <div className={`grid grid-cols-1 ${(showcase.sections?.showHours !== false ? 1 : 0) + (mostraColonnaContatti ? 1 : 0) === 2 ? "md:grid-cols-4" : (showcase.sections?.showHours !== false ? 1 : 0) + (mostraColonnaContatti ? 1 : 0) === 1 ? "md:grid-cols-3" : "md:grid-cols-2"} gap-8 pb-8 border-b border-slate-800 text-xs`}>
           {/* Colonna 1: Brand */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-white font-extrabold text-base">
@@ -43,37 +56,48 @@ export function PublicFooter({ config }: PublicFooterProps) {
                 <Clock className="w-3.5 h-3.5 text-amber-400" />
                 {showcase.customLabels?.hoursTitle || "Orari di Apertura"}
               </h4>
-              <p className="text-slate-400">{contactInfo.hoursWeekday || "Martedì – Venerdì: 09:00 – 13:00 / 14:30 – 19:30"}</p>
-              <p className="text-slate-400">{contactInfo.hoursWeekend || "Sabato: 08:30 – 19:00 (Continuato)"}</p>
-              <p className="text-amber-400 font-semibold pt-1">
-                {contactInfo.hoursNote || "Lunedì e Domenica: Chiuso • Si riceve su appuntamento"}
-              </p>
+              {righeOrari.length > 0 ? (
+                righeOrari.map((r) => (
+                  <p key={r.label} className="text-slate-400">
+                    <span className="text-slate-200 font-semibold">{r.label}:</span> {r.orario}
+                  </p>
+                ))
+              ) : (
+                <p className="text-slate-400">{contactInfo.hoursWeekday}</p>
+              )}
+              {contactInfo.hoursNote && (
+                <p className="text-amber-400 font-semibold pt-1">{contactInfo.hoursNote}</p>
+              )}
             </div>
           )}
 
           {/* Colonna 3: Indirizzo e Contatti */}
+          {mostraColonnaContatti && (
           <div className="space-y-2">
             <h4 className="text-white font-bold uppercase tracking-wider text-[11px] flex items-center gap-1.5">
               <MapPin className="w-3.5 h-3.5 text-amber-400" />
               {showcase.customLabels?.contactTitle || "Dove Siamo"}
             </h4>
-            <p className="text-slate-400">{contactInfo.address || config.address || "Via Roma, 42 — Milano (MI)"}</p>
-            {contactInfo.addressNote && (
+            {mostraIndirizzo && (
+              <p className="text-slate-400">{contactInfo.address || config.address || "Via Roma, 42 — Milano (MI)"}</p>
+            )}
+            {mostraIndirizzo && contactInfo.addressNote && (
               <p className="text-slate-500 text-[11px]">{contactInfo.addressNote}</p>
             )}
-            {(contactInfo.phone || contact?.phone) && (
+            {mostraTelefono && (contactInfo.phone || contact?.phone) && (
               <p className="text-slate-400 flex items-center gap-1 mt-1">
                 <Phone className="w-3 h-3 text-slate-500" />
                 <span>Tel / WhatsApp: {contactInfo.phone || contact?.phone}</span>
               </p>
             )}
-            {(contactInfo.email || contact?.email) && (
+            {mostraEmail && (contactInfo.email || contact?.email) && (
               <p className="text-slate-400 flex items-center gap-1 mt-0.5">
                 <Mail className="w-3 h-3 text-slate-500" />
                 <span>Email: {contactInfo.email || contact?.email}</span>
               </p>
             )}
           </div>
+          )}
 
           {/* Colonna 4: Garanzia & Qualità */}
           <div className="space-y-2">
