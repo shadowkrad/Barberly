@@ -615,7 +615,7 @@ export default function BarberlyImpostazioniPage() {
                   body: JSON.stringify({ whatsappAbilitato: nextVal }),
                 }).catch(() => {});
               }}
-              className="w-5 h-5 accent-amber-500 rounded cursor-pointer"
+              className="shrink-0 w-5 h-5 accent-amber-500 rounded cursor-pointer"
             />
           </div>
 
