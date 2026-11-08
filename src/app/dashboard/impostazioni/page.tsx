@@ -26,9 +26,10 @@ import RegisteredDevicesCard from "@/components/dashboard/RegisteredDevicesCard"
 import ShowcaseVisualStudio from "@/components/dashboard/showcase/ShowcaseVisualStudio";
 import TelegramHubCard, { TelegramHubData } from "@/components/dashboard/TelegramHubCard";
 import FidelitySettingsPanel, { FidelitySettingsData } from "@/components/dashboard/FidelitySettingsPanel";
-import { Send, Award } from "lucide-react";
+import EditorCartaGrafica from "@/components/carta-grafica/EditorCartaGrafica";
+import { Send, Award, CreditCard } from "lucide-react";
 
-type SettingsTab = "bottega" | "orari" | "email" | "whatsapp" | "telegram" | "fidelity" | "dispositivi" | "aspetto";
+type SettingsTab = "bottega" | "orari" | "email" | "whatsapp" | "telegram" | "fidelity" | "dispositivi" | "aspetto" | "carta-grafica";
 
 interface TabItem {
   id: SettingsTab;
@@ -103,6 +104,14 @@ const TABS: TabItem[] = [
     iconComponent: Palette,
     shortDescription: "Live Studio Vetrina",
     description: "Visual Showcase Customizer per editare in tempo reale testi, foto, cover e colori della vetrina",
+  },
+  {
+    id: "carta-grafica",
+    label: "Biglietti & Buoni",
+    shortLabel: "Biglietti",
+    iconComponent: CreditCard,
+    shortDescription: "Grafica buoni e biglietto da visita",
+    description: "Editor visivo per buoni regalo e biglietti da visita fronte/retro con sfondo personalizzato",
   },
 ];
 
@@ -668,6 +677,11 @@ export default function BarberlyImpostazioniPage() {
       {/* TAB 5: ASPETTO & BRAND (SHOWCASE VISUAL STUDIO) */}
       {activeTab === "aspetto" && (
         <ShowcaseVisualStudio />
+      )}
+      {activeTab === "carta-grafica" && (
+        <div className="space-y-6">
+          <EditorCartaGrafica />
+        </div>
       )}
         </main>
       </div>
