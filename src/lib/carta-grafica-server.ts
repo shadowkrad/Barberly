@@ -11,6 +11,7 @@ import {
   DatiAttivitaCarta,
   OrarioGiornoCarta,
   normalizzaCartaGraficaConfig,
+  applicaPersonalizzati,
 } from "@/lib/carta-grafica-types";
 
 const GIORNI_ORDINE: Array<{ giorno: number; label: string }> = [
@@ -26,6 +27,8 @@ const GIORNI_ORDINE: Array<{ giorno: number; label: string }> = [
 export async function caricaCartaGrafica(origineUrl?: string): Promise<{
   config: CartaGraficaConfig;
   attivita: DatiAttivitaCarta;
+  /** Dati di Impostazioni, senza le voci cambiate solo per biglietti e buoni (serve all'editor). */
+  ereditata: DatiAttivitaCarta;
 }> {
   await ensureDatabase();
   const { showcase, cache, giorni } = await caricaVetrinaUnificata();
@@ -75,7 +78,7 @@ export async function caricaCartaGrafica(origineUrl?: string): Promise<{
     qrVetrinaDataUrl = await QRCode.toDataURL(sitoUrl, { margin: 1, width: 280, errorCorrectionLevel: "M" });
   } catch {}
 
-  const attivita: DatiAttivitaCarta = {
+  const ereditata: DatiAttivitaCarta = {
     nome,
     slogan: "",
     indirizzo: (cache?.address || (showcase as any)?.contactInfo?.address || "").trim(),
@@ -92,7 +95,7 @@ export async function caricaCartaGrafica(origineUrl?: string): Promise<{
     orariRaggruppati,
   };
 
-  return { config, attivita };
+  return { config, attivita: applicaPersonalizzati(ereditata, config.personalizzati), ereditata };
 }
 
 export async function salvaCartaGrafica(nuovaConfig: unknown): Promise<CartaGraficaConfig> {
