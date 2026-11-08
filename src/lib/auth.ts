@@ -23,6 +23,19 @@ export function isDemoEnvironment(host?: string | null): boolean {
 /**
  * Valida la password master o il PIN fornito rispetto alla configurazione tenant
  */
+/**
+ * La password di prova "Admin123!" vale SOLO in sviluppo e nelle demo (Vercel / IS_DEMO).
+ * In produzione sul server del cliente non esiste: si entra solo con la password o il PIN impostati nell'ambiente.
+ */
+function passwordDiProvaConsentita(): boolean {
+  return (
+    process.env.NODE_ENV !== "production" ||
+    process.env.IS_DEMO === "true" ||
+    process.env.NEXT_PUBLIC_IS_DEMO === "true" ||
+    Boolean(process.env.VERCEL)
+  );
+}
+
 export function verifyAdminPasswordOrPin(input: any): boolean {
   if (!input) return false;
   const trimmed = String(input).trim();
@@ -31,7 +44,7 @@ export function verifyAdminPasswordOrPin(input: any): boolean {
     process.env.ADMIN_PASSWORD,
     process.env.INITIAL_ADMIN_PIN,
     process.env.ADMIN_PIN,
-    "Admin123!",
+    ...(passwordDiProvaConsentita() ? ["Admin123!"] : []),
   ].filter(Boolean) as string[];
 
   return validSecrets.some((s) => s.trim() === trimmed);
