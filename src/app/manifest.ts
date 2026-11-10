@@ -1,17 +1,23 @@
 import { MetadataRoute } from "next";
 import { prisma, ensureDatabase } from "@/lib/db";
+import { getPwaIconVersion, pwaIconUrl } from "@/lib/pwa-icon-version";
 
 export const dynamic = "force-dynamic";
 
 export default async function manifest(): Promise<MetadataRoute.Manifest> {
   let brandName = "Barberly";
   let themeColor = "#d97706";
+  let v = "default";
 
   try {
     await ensureDatabase();
-    const cache = await prisma.tenantLocalCache.findUnique({
-      where: { id: "singleton" },
-    });
+    const [cache, ver] = await Promise.all([
+      prisma.tenantLocalCache.findUnique({
+        where: { id: "singleton" },
+      }),
+      getPwaIconVersion(),
+    ]);
+    v = ver;
     if (cache?.brandName) {
       brandName = cache.brandName;
     }
@@ -34,19 +40,19 @@ export default async function manifest(): Promise<MetadataRoute.Manifest> {
     theme_color: themeColor,
     icons: [
       {
-        src: "/api/pwa-icon?size=192",
+        src: pwaIconUrl(192, v),
         sizes: "192x192",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: "/api/pwa-icon?size=512",
+        src: pwaIconUrl(512, v),
         sizes: "512x512",
         type: "image/png",
         purpose: "any",
       },
       {
-        src: "/api/pwa-icon?size=512",
+        src: pwaIconUrl(512, v, { maskable: true }),
         sizes: "512x512",
         type: "image/png",
         purpose: "maskable",
