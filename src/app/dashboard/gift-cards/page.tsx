@@ -779,11 +779,11 @@ export default function BuoniPage() {
                           <div className="rounded-xl border border-slate-700 bg-slate-900 p-3 space-y-3">
                             <div className="text-xs font-semibold uppercase tracking-wider text-slate-400">Consegna il buono</div>
                             <div className="flex flex-wrap gap-2">
-                              <button onClick={() => stampa(b, "cartoncino")} className="px-3 py-1.5 rounded-lg border border-slate-700 text-xs font-semibold text-slate-300 hover:bg-slate-800 bg-slate-950">
-                                🎁 Stampa cartoncino regalo
-                              </button>
                               <button onClick={() => stampa(b, "a4")} className="px-3 py-1.5 rounded-lg border border-slate-700 text-xs font-semibold text-slate-300 hover:bg-slate-800 bg-slate-950">
-                                Stampa A4
+                                🎁 Stampa buono A4
+                              </button>
+                              <button onClick={() => stampa(b, "cartoncino")} className="px-3 py-1.5 rounded-lg border border-slate-700 text-xs font-semibold text-slate-300 hover:bg-slate-800 bg-slate-950">
+                                Cartoncino per busta
                               </button>
                               <button onClick={() => stampa(b, "ricevuta")} className="px-3 py-1.5 rounded-lg border border-slate-700 text-xs font-semibold text-slate-300 hover:bg-slate-800 bg-slate-950">
                                 Stampa ricevuta
