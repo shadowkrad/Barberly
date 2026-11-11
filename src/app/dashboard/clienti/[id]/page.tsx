@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, use } from "react";
+import { useState, useEffect, use, useCallback } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { generaLinkWhatsApp } from "@/lib/whatsapp";
 import { classificaTelefono, ETICHETTA_TELEFONO, puoRicevereMessaggi } from "@/lib/phone";
+import ClienteFedeltaPanel from "@/components/dashboard/ClienteFedeltaPanel";
 
 export default function BarberlyClienteDetailPage({
   params,
@@ -35,18 +36,21 @@ export default function BarberlyClienteDetailPage({
   const [errore, setErrore] = useState<string | null>(null);
   const [duplicatoId, setDuplicatoId] = useState<string | null>(null);
 
-  useEffect(() => {
-    fetch(`/api/clienti/${id}`)
-      .then((r) => r.json())
-      .then((data) => {
-        setCliente(data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        console.error(err);
-        setLoading(false);
-      });
+  const ricaricaCliente = useCallback(async () => {
+    try {
+      const r = await fetch(`/api/clienti/${id}`);
+      const data = await r.json();
+      setCliente(data);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
   }, [id]);
+
+  useEffect(() => {
+    ricaricaCliente();
+  }, [ricaricaCliente]);
 
   const handleUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -356,51 +360,20 @@ export default function BarberlyClienteDetailPage({
         </form>
       </div>
 
-      {/* Fedeltà e tessera digitale */}
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xs space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Award className="w-5 h-5 text-amber-500" />
-            Fedeltà e punti
-          </h2>
-          {cliente.tokenTessera && (
-            <div className="flex gap-2 text-[11px]">
-              <a
-                href={`/tessera/${cliente.tokenTessera}`}
-                target="_blank"
-                rel="noreferrer"
-                className="px-2.5 py-1 rounded-lg border border-amber-500/40 text-amber-400 font-semibold hover:bg-amber-500/10"
-              >
-                Apri la tessera digitale
-              </a>
-              <button
-                type="button"
-                onClick={() => navigator.clipboard?.writeText(`${window.location.origin}/tessera/${cliente.tokenTessera}`)}
-                className="px-2.5 py-1 rounded-lg border border-slate-700 text-slate-300 font-semibold hover:bg-slate-800"
-              >
-                Copia link
-              </button>
-            </div>
-          )}
-        </div>
-        {(cliente.movimentiPunti || []).length === 0 ? (
-          <p className="text-xs text-slate-500">Nessun movimento punti per questo cliente.</p>
-        ) : (
-          <div className="divide-y divide-slate-800">
-            {cliente.movimentiPunti.map((m: any) => (
-              <div key={m.id} className="py-2 flex items-center justify-between text-xs gap-3">
-                <div className="min-w-0">
-                  <p className="text-slate-200 truncate">{m.descrizione || (m.tipo === "RISCATTO" ? "Riscatto premio" : "Accredito punti")}</p>
-                  <p className="text-[10px] text-slate-500">{new Date(m.createdAt).toLocaleString("it-IT", { dateStyle: "medium", timeStyle: "short" })}</p>
-                </div>
-                <span className={`font-bold ${m.tipo === "RISCATTO" ? "text-rose-400" : "text-emerald-400"}`}>
-                  {m.tipo === "RISCATTO" ? `−${m.punti}` : `+${m.punti}`}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
+      {/* Fedeltà, punti e invio tessera */}
+      <ClienteFedeltaPanel
+        clienteId={cliente.id}
+        nomeCliente={`${cliente.nome || ""} ${cliente.cognome || ""}`.trim()}
+        telefono={cliente.telefono || ""}
+        email={cliente.email}
+        punti={cliente.puntiFedelta ?? 0}
+        tokenTessera={cliente.tokenTessera}
+        movimenti={cliente.movimentiPunti || []}
+        nomeAttivita={cliente.nomeAttivita}
+        dark
+        accent="amber"
+        onSaldoAggiornato={ricaricaCliente}
+      />
 
       {/* Buoni */}
       <div className="bg-slate-900 border border-slate-800 rounded-2xl p-5 sm:p-6 shadow-xs space-y-3">
