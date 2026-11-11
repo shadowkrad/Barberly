@@ -48,7 +48,7 @@ export default async function DashboardLayout({
 
   return (
     <TenantConfigProvider config={tenantConfig}>
-      <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col">
+      <div className="dark min-h-screen bg-slate-900 text-slate-100 flex flex-col">
         {showMaintenance && maintenanceData && (
           <MaintenanceBanner
             adminNome={maintenanceData.adminNome}
