@@ -2,6 +2,10 @@
 
 ## Novità della Versione 1.1.3 (Patch)
 
+### 🧭 Menu Gestionale e Impostazioni Riorganizzati in Gruppi
+- **Menu laterale più ordinato (`SidebarGruppi.tsx`, `DashboardSidebar.tsx`)**: le voci della bottega sono raccolte in gruppi apribili (*Agenda*, *Bottega*) che si aprono automaticamente in base alla pagina corrente.
+- **Impostazioni raggruppate per area e salvataggio comodo su mobile (`/dashboard/impostazioni`)**: le sezioni sono organizzate in 5 gruppi (*Attività*, *Notifiche*, *Fidelity e buoni*, *Aspetto*, *Dispositivi*; *Fidelity e buoni* compare solo se attiva dal Portale) con barra fissa **Salva modifiche** su smartphone.
+
 ### 👤 Gestione Punti nel Profilo Cliente & Invio Manuale Tessera (WhatsApp / Email)
 - **Gestione punti e premi direttamente nella scheda cliente (`/dashboard/clienti/[id]`)**: sostituita la sezione statica con il pannello completo *Fedeltà, Punti & Tessera Digitale* (`ClienteFedeltaPanel` dark), che consente di accreditare punti da spesa (€) o punti extra manuali e riscattare premi direttamente dal profilo.
 - **Invio manuale della tessera punti per WhatsApp ed Email**: generazione automatica (modificabile) del testo personalizzato con saldo punti, link `/tessera/[token]` e guida al salvataggio su Home, con azioni dirette **Invia su WhatsApp (`wa.me`)**, **Invia via Email (`mailto:`)** e **Copia testo / link**.

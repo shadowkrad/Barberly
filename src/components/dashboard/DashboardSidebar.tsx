@@ -1,5 +1,6 @@
 "use client";
 
+import SidebarGruppi, { ElementoMenu } from "@/components/dashboard/SidebarGruppi";
 import { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -34,6 +35,16 @@ const baseNavLinks = [
   { href: "/dashboard/barbieri", label: "Barbieri & Poltrone", icon: UserCheck },
   { href: "/dashboard/listino", label: "Listino & Combo", icon: Tag },
   { href: "/dashboard/orari", label: "Orari & Disponibilità", icon: CalendarCheck },
+];
+
+const vocePer = (href: string) => baseNavLinks.find((l) => l.href === href)!;
+
+// Le voci proprie del modulo sono raccolte in gruppi apribili: il menu mostra meno cose insieme
+const baseNavVoci: ElementoMenu[] = [
+  vocePer("/dashboard"),
+  { gruppo: "Agenda", icona: vocePer("/dashboard/calendario").icon, voci: [vocePer("/dashboard/calendario"), vocePer("/dashboard/appuntamenti"), vocePer("/dashboard/orari")] },
+  { gruppo: "Bottega", icona: vocePer("/dashboard/barbieri").icon, voci: [vocePer("/dashboard/barbieri"), vocePer("/dashboard/listino")] },
+  vocePer("/dashboard/clienti"),
 ];
 
 const addonNavLinks = [
@@ -146,25 +157,15 @@ export default function DashboardSidebar() {
           <p className="text-[10px] font-bold uppercase tracking-wider text-slate-400 px-3 pb-1">
             Gestione Bottega
           </p>
-          {baseNavLinks.map((link) => {
-            const active = isActive(link.href);
-            const Icon = link.icon;
-            return (
-              <Link
-                key={link.href}
-                href={link.href}
-                onClick={() => setMobileOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2 rounded-xl text-xs font-semibold transition-all ${
-                  active
-                    ? "bg-amber-500 text-slate-950 font-bold shadow-md shadow-amber-500/20"
-                    : "text-slate-300 hover:bg-slate-900 hover:text-white"
-                }`}
-              >
-                <Icon className="w-4 h-4 shrink-0" />
-                <span>{link.label}</span>
-              </Link>
-            );
-          })}
+          <SidebarGruppi
+            elementi={baseNavVoci}
+            isActive={isActive}
+            onNavigate={() => setMobileOpen(false)}
+            attivo="bg-amber-500 text-slate-950 font-semibold"
+            inattivo="text-slate-300 hover:bg-slate-900 hover:text-white"
+            chevron="text-slate-400"
+            linea="border-slate-800"
+          />
 
           {/* Add-ons Section */}
           {activeAddons.length > 0 && (
