@@ -1,5 +1,7 @@
 "use client";
 
+import { useTenantConfig } from "@/components/providers/TenantConfigProvider";
+import { TAAAAC_ADDONS } from "@/lib/taaaac-client";
 import { useState, useEffect, useRef } from "react";
 import {
   Settings,
@@ -115,8 +117,61 @@ const TABS: TabItem[] = [
   },
 ];
 
+// Le sezioni delle impostazioni sono raccolte in pochi gruppi: meno voci, tutto più vicino
+interface GruppoImpostazioni {
+  id: string;
+  label: string;
+  shortDescription: string;
+  iconComponent: React.ElementType;
+  tabs: SettingsTab[];
+}
+
+const GRUPPI_BASE: { id: string; label: string; shortDescription: string; tabs: SettingsTab[] }[] = [
+  { id: "attivita", label: "Attività", shortDescription: "Sede, orari e turni", tabs: ["bottega", "orari"] },
+  { id: "notifiche", label: "Notifiche", shortDescription: "Email, WhatsApp e Telegram", tabs: ["email", "whatsapp", "telegram"] },
+  { id: "fidelity", label: "Fidelity e buoni", shortDescription: "Punti, buoni e biglietti", tabs: ["fidelity", "carta-grafica"] },
+  { id: "aspetto", label: "Aspetto", shortDescription: "Logo, colori e vetrina", tabs: ["aspetto"] },
+  { id: "dispositivi", label: "Dispositivi", shortDescription: "Smartphone e accessi", tabs: ["dispositivi"] },
+];
+
+// Fidelity e buoni compaiono solo se almeno una di queste espansioni e' attiva dal Portale; altrimenti
+// l'editor dei biglietti da visita resta sotto "Aspetto".
+function costruisciGruppi(isAddonActive: (id: any) => boolean): GruppoImpostazioni[] {
+  const loyalty = isAddonActive(TAAAAC_ADDONS.LOYALTY_CARD);
+  const buoni = isAddonActive(TAAAAC_ADDONS.GIFT_CARDS);
+  const fidelityAttivo = loyalty || buoni;
+  const risultato: GruppoImpostazioni[] = [];
+  for (const g of GRUPPI_BASE) {
+    let tabs = [...g.tabs];
+    let label = g.label;
+    if (g.id === "fidelity") {
+      if (!fidelityAttivo) continue;
+      tabs = tabs.filter((t) => (t === "fidelity" ? loyalty : true));
+      label = loyalty && buoni ? "Fidelity e buoni" : loyalty ? "Fidelity" : "Buoni e biglietti";
+    }
+    if (g.id === "aspetto" && !fidelityAttivo) tabs.push("carta-grafica");
+    const prima = TABS.find((t) => t.id === tabs[0]);
+    risultato.push({
+      id: g.id,
+      label,
+      shortDescription: g.shortDescription,
+      iconComponent: prima?.iconComponent || Settings,
+      tabs,
+    });
+  }
+  return risultato;
+}
+
 export default function BarberlyImpostazioniPage() {
-  const [activeTab, setActiveTab] = useState<SettingsTab>("bottega");
+  const { isAddonActive } = useTenantConfig();
+  const gruppi = costruisciGruppi(isAddonActive);
+  const [activeGroup, setActiveGroup] = useState<string>("attivita");
+  const gruppoAttivo = gruppi.find((g) => g.id === activeGroup) || gruppi[0];
+  const inGruppo = (t: SettingsTab) => gruppoAttivo.tabs.includes(t);
+  const titoloSezione = (t: SettingsTab) =>
+    gruppoAttivo.tabs.length > 1 ? (
+      <h2 className="text-base font-semibold text-slate-900 pt-2">{TABS.find((x) => x.id === t)?.label}</h2>
+    ) : null;
   const [saving, setSaving] = useState(false);
   const [feedback, setFeedback] = useState<{ type: "success" | "error"; text: string } | null>(null);
   // Telegram & Fidelity State
@@ -278,11 +333,10 @@ export default function BarberlyImpostazioniPage() {
     }
   };
 
-  const currentTab = TABS.find((t) => t.id === activeTab);
-  const ActiveIcon = currentTab?.iconComponent || Scissors;
+  const ActiveIcon = gruppoAttivo.iconComponent;
 
   return (
-    <div className="space-y-6 max-w-6xl mx-auto pb-12">
+    <div className="space-y-6 max-w-6xl mx-auto pb-24 lg:pb-12">
       {/* Intestazione Principale */}
       <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
@@ -300,11 +354,11 @@ export default function BarberlyImpostazioniPage() {
           </p>
         </div>
 
-        {activeTab !== "aspetto" && (
+        {!gruppoAttivo.tabs.every((t) => t === "aspetto") && (
           <button
             onClick={() => handleSave()}
             disabled={saving}
-            className="inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-400 active:scale-98 text-slate-950 font-bold text-sm rounded-xl shadow-xs shadow-amber-500/20 transition-all cursor-pointer disabled:opacity-60"
+            className="hidden lg:inline-flex items-center justify-center gap-2 px-5 py-2.5 bg-amber-500 hover:bg-amber-400 active:scale-98 text-slate-950 font-bold text-sm rounded-xl shadow-xs shadow-amber-500/20 transition-all cursor-pointer disabled:opacity-60"
           >
             {saving ? (
               <>
@@ -320,6 +374,18 @@ export default function BarberlyImpostazioniPage() {
           </button>
         )}
       </div>
+
+      {!gruppoAttivo.tabs.every((t) => t === "aspetto") && (
+        <div className="lg:hidden fixed bottom-0 inset-x-0 z-40 p-3 bg-slate-950/95 border-t border-slate-800">
+          <button
+            onClick={() => handleSave()}
+            disabled={saving}
+            className="w-full inline-flex items-center justify-center gap-2 px-5 py-3 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-sm rounded-xl disabled:opacity-60"
+          >
+            {saving ? "Salvataggio..." : "Salva modifiche"}
+          </button>
+        </div>
+      )}
 
       {/* Feedback Alert */}
       {feedback && (
@@ -359,11 +425,11 @@ export default function BarberlyImpostazioniPage() {
               </div>
               <select
                 id="settings-tab-select"
-                value={activeTab}
-                onChange={(e) => setActiveTab(e.target.value as SettingsTab)}
+                value={gruppoAttivo.id}
+                onChange={(e) => setActiveGroup(e.target.value)}
                 className="w-full pl-9 pr-9 py-2.5 bg-slate-950 border border-slate-700 rounded-xl text-xs sm:text-sm font-semibold text-white focus:outline-none focus:ring-2 focus:ring-amber-500 appearance-none cursor-pointer"
               >
-                {TABS.map((tab) => (
+                {gruppi.map((tab) => (
                   <option key={tab.id} value={tab.id} className="bg-slate-900 text-white py-1">
                     {tab.label} — {tab.shortDescription}
                   </option>
@@ -387,14 +453,14 @@ export default function BarberlyImpostazioniPage() {
               className="flex flex-col gap-1.5 pt-2"
               aria-label="Sezioni Impostazioni Barberly"
             >
-              {TABS.map((tab) => {
-                const isActive = activeTab === tab.id;
+              {gruppi.map((tab) => {
+                const isActive = gruppoAttivo.id === tab.id;
                 const IconComp = tab.iconComponent;
                 return (
                   <button
                     key={tab.id}
                     type="button"
-                    onClick={() => setActiveTab(tab.id)}
+                    onClick={() => setActiveGroup(tab.id)}
                     className={`group flex items-center justify-between w-full p-2.5 sm:p-3 rounded-xl text-left transition-all cursor-pointer ${
                       isActive
                         ? "bg-amber-500/10 text-amber-300 font-semibold border border-amber-500/40 shadow-xs"
@@ -436,27 +502,12 @@ export default function BarberlyImpostazioniPage() {
 
         {/* COLONNA DESTRA: PANNELLO CONTENUTI */}
         <main className="lg:col-span-8 xl:col-span-9 space-y-6">
-          {/* Header contestuale scheda attiva */}
-          {currentTab && (
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20 flex items-center justify-center shrink-0">
-                  <ActiveIcon className="w-5 h-5" />
-                </div>
-                <div>
-                  <h2 className="text-base sm:text-lg font-black text-white">
-                    {currentTab.label}
-                  </h2>
-                  <p className="text-xs text-slate-400 mt-0.5">{currentTab.description}</p>
-                </div>
-              </div>
-            </div>
-          )}
 
       {/* CONTENUTO SCHEDE */}
 
       {/* TAB 1: BOTTEGA & SEDE */}
-      {activeTab === "bottega" && (
+      {inGruppo("bottega") && titoloSezione("bottega")}
+      {inGruppo("bottega") && (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xs space-y-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
@@ -539,7 +590,8 @@ export default function BarberlyImpostazioniPage() {
       )}
 
       {/* TAB 2: ORARI & TURNI */}
-      {activeTab === "orari" && (
+      {inGruppo("orari") && titoloSezione("orari")}
+      {inGruppo("orari") && (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xs space-y-5">
           <div className="text-xs text-slate-300 space-y-3">
             <p className="leading-relaxed">
@@ -596,14 +648,16 @@ export default function BarberlyImpostazioniPage() {
       )}
 
       {/* TAB 3: EMAIL & NOTIFICHE */}
-      {activeTab === "email" && (
+      {inGruppo("email") && titoloSezione("email")}
+      {inGruppo("email") && (
         <div className="space-y-4">
           <EmailSettingsCard />
         </div>
       )}
 
       {/* TAB 4: WHATSAPP & SMS */}
-      {activeTab === "whatsapp" && (
+      {inGruppo("whatsapp") && titoloSezione("whatsapp")}
+      {inGruppo("whatsapp") && (
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xs space-y-5">
           <div className="flex items-center justify-between p-4 rounded-xl bg-slate-800/80 border border-slate-700">
             <div>
@@ -638,14 +692,16 @@ export default function BarberlyImpostazioniPage() {
       )}
 
       {/* TAB: TELEGRAM HUB & STAFF */}
-      {activeTab === "telegram" && (
+      {inGruppo("telegram") && titoloSezione("telegram")}
+      {inGruppo("telegram") && (
         <div className="space-y-6">
           <TelegramHubCard hub={telegramHub} />
         </div>
       )}
 
       {/* TAB: FIDELITY & PUNTI */}
-      {activeTab === "fidelity" && (
+      {inGruppo("fidelity") && titoloSezione("fidelity")}
+      {inGruppo("fidelity") && (
         <div className="space-y-6">
           <FidelitySettingsPanel
             data={fidelitySettings}
@@ -668,17 +724,20 @@ export default function BarberlyImpostazioniPage() {
       )}
 
       {/* TAB: DISPOSITIVI PWA & BIOMETRIA */}
-      {activeTab === "dispositivi" && (
+      {inGruppo("dispositivi") && titoloSezione("dispositivi")}
+      {inGruppo("dispositivi") && (
         <div className="space-y-6">
           <RegisteredDevicesCard />
         </div>
       )}
 
       {/* TAB 5: ASPETTO & BRAND (SHOWCASE VISUAL STUDIO) */}
-      {activeTab === "aspetto" && (
+      {inGruppo("aspetto") && titoloSezione("aspetto")}
+      {inGruppo("aspetto") && (
         <ShowcaseVisualStudio />
       )}
-      {activeTab === "carta-grafica" && (
+      {inGruppo("carta-grafica") && titoloSezione("carta-grafica")}
+      {inGruppo("carta-grafica") && (
         <div className="space-y-6">
           <EditorCartaGrafica />
         </div>
