@@ -255,33 +255,33 @@ export default function BarberlyClientiPage() {
 
             {/* VISTA DESKTOP: TABELLA COMPATTA */}
             <div className="hidden md:block overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-300">
-                <thead className="bg-slate-950/80 text-[10px] uppercase font-bold text-slate-400 border-b border-slate-800">
+              <table className="w-full text-left text-sm text-slate-300">
+                <thead className="bg-slate-950/80 text-xs font-bold text-slate-400 border-b border-slate-800">
                   <tr>
-                    <th className="py-3 px-4">Cliente</th>
-                    <th className="py-3 px-4">Contatti</th>
-                    <th className="py-3 px-4">Note Taglio & Barba</th>
-                    <th className="py-3 px-4">Visite</th>
-                    <th className="py-3 px-4">Fidelity</th>
-                    <th className="py-3 px-4 text-right">Azioni</th>
+                    <th className="px-4 py-4 font-semibold">Cliente</th>
+                    <th className="px-4 py-4 font-semibold">Contatti</th>
+                    <th className="px-4 py-4 font-semibold">Note Taglio & Barba</th>
+                    <th className="px-4 py-4 font-semibold">Visite</th>
+                    <th className="px-4 py-4 font-semibold">Fidelity</th>
+                    <th className="px-4 py-4 font-semibold text-right">Azioni</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800/80">
                   {clienti.map((c) => (
                     <tr key={c.id} className="hover:bg-slate-800/40 transition">
-                      <td className="py-3 px-4">
+                      <td className="px-4 py-5 align-middle">
                         <div className="font-bold text-white text-sm">
                           {c.nome} {c.cognome}
                         </div>
-                        <div className="text-[10px] text-slate-400">
+                        <div className="text-xs text-slate-400">
                           {c.consensoPrivacy ? "Consenso Privacy rilasciato" : "Senza consenso"}
                         </div>
                       </td>
-                      <td className="py-3 px-4">
+                      <td className="px-4 py-5 align-middle">
                         <div className="font-mono text-slate-200">{c.telefono}</div>
                         {c.email && <div className="text-slate-400">{c.email}</div>}
                       </td>
-                      <td className="py-3 px-4 max-w-xs">
+                      <td className="px-4 py-5 align-middle max-w-xs">
                         {c.note ? (
                           <div className="truncate text-slate-300" title={c.note}>
                             {c.note}
@@ -290,16 +290,16 @@ export default function BarberlyClientiPage() {
                           <span className="text-slate-600 italic">Nessuna nota</span>
                         )}
                       </td>
-                      <td className="py-3 px-4">
+                      <td className="px-4 py-5 align-middle">
                         <span className="font-semibold text-slate-200">{c._count.appuntamenti}</span>
                       </td>
-                      <td className="py-3 px-4">
+                      <td className="px-4 py-5 align-middle">
                         <span className="inline-flex items-center gap-1 font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
                           <Award className="w-3 h-3" />
                           {c.puntiFedelta} pt
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-right">
+                      <td className="px-4 py-5 align-middle text-right">
                         <div className="flex items-center justify-end gap-1.5">
                           <a
                             href={`tel:${c.telefono}`}
