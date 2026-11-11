@@ -40,14 +40,20 @@ export async function GET(
     const tokenTessera = await assicuraTokenTessera(id);
     // Buoni intestati al cliente ancora utilizzabili
     const ora = new Date();
-    const buoni = await prisma.giftCard.findMany({
-      where: { clienteId: id, stato: "ATTIVA", OR: [{ dataScadenza: null }, { dataScadenza: { gte: ora } }] },
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true, codice: true, motivo: true, tipoValore: true, importoIniziale: true, saldoResiduo: true,
-        percentuale: true, descrizioneServizio: true, dataScadenza: true,
-      },
-    });
+    const [buoni, cache] = await Promise.all([
+      prisma.giftCard.findMany({
+        where: { clienteId: id, stato: "ATTIVA", OR: [{ dataScadenza: null }, { dataScadenza: { gte: ora } }] },
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true, codice: true, motivo: true, tipoValore: true, importoIniziale: true, saldoResiduo: true,
+          percentuale: true, descrizioneServizio: true, dataScadenza: true,
+        },
+      }),
+      prisma.tenantLocalCache.findUnique({
+        where: { id: "singleton" },
+        select: { brandName: true },
+      }),
+    ]);
 
     return NextResponse.json({
       id: client.id,
@@ -61,6 +67,7 @@ export async function GET(
       consensoMarketing: client.marketingConsent,
       dataNascita: client.birthDate ? client.birthDate.toISOString() : null,
       tokenTessera,
+      nomeAttivita: cache?.brandName || "Barberly",
       buoni,
       movimentiPunti: client.pointsMovements,
       createdAt: client.createdAt.toISOString(),

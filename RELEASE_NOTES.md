@@ -2,6 +2,11 @@
 
 ## Novità della Versione 1.1.3 (Patch)
 
+### 👤 Gestione Punti nel Profilo Cliente & Invio Manuale Tessera (WhatsApp / Email)
+- **Gestione punti e premi direttamente nella scheda cliente (`/dashboard/clienti/[id]`)**: sostituita la sezione statica con il pannello completo *Fedeltà, Punti & Tessera Digitale* (`ClienteFedeltaPanel` dark), che consente di accreditare punti da spesa (€) o punti extra manuali e riscattare premi direttamente dal profilo.
+- **Invio manuale della tessera punti per WhatsApp ed Email**: generazione automatica (modificabile) del testo personalizzato con saldo punti, link `/tessera/[token]` e guida al salvataggio su Home, con azioni dirette **Invia su WhatsApp (`wa.me`)**, **Invia via Email (`mailto:`)** e **Copia testo / link**.
+- **`nomeAttivita` nella risposta di `GET /api/clienti/[id]`**: recupera `brandName` da `TenantLocalCache` per i messaggi generati.
+
 ### 📱 Icona dell'App e della Scheda Browser Sempre Nitida e Aggiornata
 - **Aggiornamento immediato al cambio logo/icona**: ogni volta che il titolare carica una nuova icona o un nuovo logo nello Studio/Impostazioni, l'indirizzo dell'icona nella pagina e nel manifesto PWA include automaticamente un codice di versione univoco (`&v=`). In questo modo browser e smartphone scaricano subito la nuova immagine senza restare bloccati sulla vecchia copia in memoria.
 - **Formato e dimensioni perfetti per ogni schermo (`sharp`)**: l'endpoint `/api/pwa-icon` e l'icona della tessera fedeltà digitale (`/tessera/[token]/icona`) convertono e ridimensionano sempre l'immagine in un **PNG quadrato reale** alle misure esatte richieste (`32×32`, `180×180`, `192×192`, `512×512`), partendo anche da immagini WebP, JPEG o SVG.
