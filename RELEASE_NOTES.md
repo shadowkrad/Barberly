@@ -1,5 +1,13 @@
 ﻿# 💈 Barberly — Release Notes
 
+## Novità della Versione 1.1.6 (Hotfix / Patch)
+
+### 🔒 Aggiornamento di Sicurezza
+- **Motore dell'applicazione aggiornato (Node 22)**: la versione precedente non riceveva più aggiornamenti di sicurezza dal 30 aprile 2026.
+- Nessuna modifica a ciò che vedi e a come lavori: dati, impostazioni e funzioni restano come prima.
+
+---
+
 ## Novità della Versione 1.1.5 (Hotfix / Patch di sicurezza)
 
 ### 🔒 Aggiornamento di Sicurezza
